@@ -1,0 +1,1207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}智慧养老平台 - 管理员面板{% endblock %}
+
+{% block extra_css %}
+<!-- CSRF令牌 -->
+<form id="csrf-form" style="display: none;">
+    {% csrf_token %}
+</form>
+<link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .dashboard-card {
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header-custom {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        padding: 15px;
+    }
+    
+    .card-header-custom i {
+        margin-right: 10px;
+        font-size: 1.4rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card .stat-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 30px;
+        opacity: 0.1;
+    }
+    
+    .stat-card h2 {
+        font-size: 2rem;
+        margin: 10px 0;
+    }
+    
+    .stat-card p {
+        margin-bottom: 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .user-table th, .user-table td {
+        vertical-align: middle;
+    }
+    
+    .user-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .user-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .user-icon-family { background: #4facfe; }
+    .user-icon-elderly { background: #ff6a88; }
+    .user-icon-caregiver { background: #38ef7d; }
+    .user-icon-admin { background: #6a11cb; }
+    .user-icon-doctor { background: #00c6ff; }
+    
+    .device-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .device-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        background: #f8f9fa;
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+    
+    .device-info {
+        flex-grow: 1;
+    }
+    
+    .device-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    
+    .status-online { background-color: #28a745; }
+    .status-offline { background-color: #dc3545; }
+    
+    /* User activities styles */
+    .user-activities {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .activity-icon {
+        margin-right: 15px;
+        width: 40px;
+        height: 40px;
+        background: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .activity-content {
+        flex-grow: 1;
+    }
+    
+    .activity-time {
+        font-size: 0.85rem;
+        color: #666;
+    }
+    
+    /* 消息中心样式 */
+    .messages-container {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .message-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+    }
+    
+    .message-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .message-item.unread {
+        background-color: #f0f7ff;
+    }
+    
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .message-title {
+        font-weight: 600;
+    }
+    
+    .message-time {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    
+    .message-content {
+        margin-bottom: 10px;
+    }
+    
+    .message-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .badge {
+        padding: 0.35em 0.65em;
+        border-radius: 30px;
+    }
+    
+    .badge-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .badge-approved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .badge-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    /* 自定义模态框样式 */
+    #customModalOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+        display: none;
+    }
+    
+    #customModalContainer {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        width: 90%;
+        max-width: 500px;
+        z-index: 99999;
+        display: none;
+    }
+    
+    #customModalHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    #customModalTitle {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    #customModalCloseBtn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+    
+    #customModalBody {
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #customModalFooter {
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-container">
+    <div class="dashboard-header">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h2>管理员控制面板</h2>
+                <p class="text-muted">您好，{{ user.username }}！当前时间: {% now "Y-m-d H:i" %}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus"></i> 添加用户
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-cog"></i> 系统设置
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计数据 -->
+        <div class="stats-grid mb-4">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <p>总用户数</p>
+                <h2>{{ all_users.count }}</h2>
+                <small>近7天新增: {{ new_users_count }}</small>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-user-nurse stat-icon"></i>
+                <p>老人总数</p>
+                <h2>{{ all_elders.count }}</h2>
+                <small>近7天新增: {{ new_elders_count }}</small>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-microchip stat-icon"></i>
+                <p>设备总数</p>
+                <h2>{{ all_devices.count }}</h2>
+                <small>在线设备: {{ online_devices_count }}</small>
+            </div>
+            
+            <div class="stat-card">
+                <i class="fas fa-exclamation-triangle stat-icon"></i>
+                <p>今日告警</p>
+                <h2>{{ today_alerts_count }}</h2>
+                <small>未处理: {{ unprocessed_alerts_count }}</small>
+            </div>
+        </div>
+
+        <!-- 消息中心和老人关联申请 -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-bell text-warning"></i>
+                        <span>消息中心</span>
+                        {% if unread_requests > 0 %}
+                            <span class="badge bg-danger ms-2">{{ unread_requests }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-tabs" id="messageTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab">
+                                    关联申请 {% if unread_requests > 0 %}<span class="badge bg-danger">{{ unread_requests }}</span>{% endif %}
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab">
+                                    告警通知
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="messageTabsContent">
+                            <div class="tab-pane fade show active" id="requests" role="tabpanel">
+                                <div class="messages-container">
+                                    {% if all_association_requests %}
+                                        {% for request in all_association_requests %}
+                                        <div class="message-item {% if not request.is_read and request.status == 'pending' %}unread{% endif %}">
+                                            <div class="message-header">
+                                                <div class="message-title">
+                                                    {{ request.requester.username }} 申请关联老人 {{ request.elder_name }}
+                                                    {% if request.status == 'pending' %}
+                                                    <span class="badge badge-pending">待处理</span>
+                                                    {% elif request.status == 'approved' %}
+                                                    <span class="badge badge-approved">已批准</span>
+                                                    {% else %}
+                                                    <span class="badge badge-rejected">已拒绝</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="message-time">{{ request.created_at|date:"Y-m-d H:i" }}</div>
+                                            </div>
+                                            <div class="message-content">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>联系电话:</strong> {{ request.elder_phone }}</p>
+                                                        <p><strong>居住地址:</strong> {{ request.elder_address }}</p>
+                                                        <p><strong>申请关系:</strong> {{ request.relationship }}</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>申请原因:</strong> {{ request.request_reason }}</p>
+                                                        {% if request.status != 'pending' %}
+                                                        <p><strong>处理人:</strong> {{ request.processed_by.username }}</p>
+                                                        <p><strong>处理时间:</strong> {{ request.processed_at|date:"Y-m-d H:i" }}</p>
+                                                        {% if request.remarks %}
+                                                        <p><strong>备注:</strong> {{ request.remarks }}</p>
+                                                        {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% if request.status == 'pending' %}
+                                            <div class="message-actions">
+                                                <button class="btn btn-sm btn-success" onclick="processRequest('{{ request.id }}', 'approve')">
+                                                    <i class="fas fa-check"></i> 批准
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="processRequest('{{ request.id }}', 'reject')">
+                                                    <i class="fas fa-times"></i> 拒绝
+                                                </button>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center p-5">
+                                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                            <p>暂无老人关联申请</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="alerts" role="tabpanel">
+                                {% if recent_alerts %}
+                                <div class="table-responsive alert-table">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>时间</th>
+                                                <th>老人</th>
+                                                <th>设备</th>
+                                                <th>告警类型</th>
+                                                <th>级别</th>
+                                                <th>状态</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for alert in recent_alerts %}
+                                            <tr data-alert-id="{{ alert.id }}" class="{% if alert.alert_type == '紧急求助' or alert.alert_level == 'critical' %}emergency-alert-row{% endif %}">
+                                                <td>{{ alert.timestamp|date:"m-d H:i" }}</td>
+                                                <td>{{ alert.elder.name }}</td>
+                                                <td>{{ alert.device.name|default:"无设备" }}</td>
+                                                <td>{{ alert.alert_type }}</td>
+                                                <td>
+                                                    <span class="badge bg-{% if alert.alert_level == 'critical' %}danger{% elif alert.alert_level == 'high' %}warning{% elif alert.alert_level == 'medium' %}info{% else %}secondary{% endif %}">
+                                                        {{ alert.get_alert_level_display }}
+                                                    </span>
+                                                </td>
+                                                <td class="alert-status">
+                                                    <span class="badge bg-{% if alert.processed %}success{% else %}warning{% endif %}">
+                                                        {{ alert.processed|yesno:"已处理,未处理" }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary view-alert-btn" data-alert-id="{{ alert.id }}" data-processed="{{ alert.processed|yesno:'true,false' }}" onclick="viewAlertDetails('{{ alert.id }}', '{{ alert.elder.name }}', '{{ alert.alert_type }}', '{{ alert.description }}', {{ alert.processed|yesno:'true,false' }})">
+                                                        查看详情
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center p-5">
+                                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                                    <p>暂无告警通知</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 用户管理 -->
+            <div class="col-md-8">
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-users text-primary"></i>
+                        <span>用户管理</span>
+                        <div class="ms-auto">
+                            <input type="text" class="form-control form-control-sm d-inline-block" style="width: 200px;" placeholder="搜索用户...">
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover user-table">
+                                <thead>
+                                    <tr>
+                                        <th>用户</th>
+                                        <th>用户类型</th>
+                                        <th>联系方式</th>
+                                        <th>注册时间</th>
+                                        <th>最后登录</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for profile in user_profiles %}
+                                    <tr>
+                                        <td>
+                                            <div class="user-item">
+                                                <div class="user-icon user-icon-{{ profile.user_type }}">
+                                                    {% if profile.user_type == 'family' %}
+                                                        <i class="fas fa-user-friends"></i>
+                                                    {% elif profile.user_type == 'elderly' %}
+                                                        <i class="fas fa-user"></i>
+                                                    {% elif profile.user_type == 'caregiver' %}
+                                                        <i class="fas fa-hand-holding-heart"></i>
+                                                    {% elif profile.user_type == 'doctor' %}
+                                                        <i class="fas fa-user-md"></i>
+                                                    {% elif profile.user_type == 'admin' %}
+                                                        <i class="fas fa-user-shield"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <div>{{ profile.user.username }}</div>
+                                                    <div class="small text-muted">
+                                                        {{ profile.user.email|default:"无邮箱" }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ profile.get_user_type_display }}</td>
+                                        <td>{{ profile.phone }}</td>
+                                        <td>{{ profile.user.date_joined|date:"Y-m-d" }}</td>
+                                        <td>{{ profile.user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 分页 -->
+                        <nav aria-label="Page navigation" class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                
+                <!-- 系统告警 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        <span>系统告警</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>老人</th>
+                                        <th>设备</th>
+                                        <th>告警类型</th>
+                                        <th>级别</th>
+                                        <th>处理状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for alert in all_alerts %}
+                                    <tr data-alert-id="{{ alert.id }}" class="{% if alert.alert_type == '紧急求助' or alert.alert_level == 'critical' %}emergency-alert-row{% endif %}">
+                                        <td>{{ alert.timestamp|date:"m-d H:i" }}</td>
+                                        <td>{{ alert.elder.name }}</td>
+                                        <td>{{ alert.device.name|default:"无设备" }}</td>
+                                        <td>{{ alert.alert_type }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if alert.alert_level == 'critical' %}danger{% elif alert.alert_level == 'high' %}warning{% elif alert.alert_level == 'medium' %}info{% else %}secondary{% endif %}">
+                                                {{ alert.get_alert_level_display }}
+                                            </span>
+                                        </td>
+                                        <td class="alert-status">
+                                            <span class="badge bg-{% if alert.processed %}success{% else %}warning{% endif %}">
+                                                {{ alert.processed|yesno:"已处理,未处理" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary view-alert-btn" data-alert-id="{{ alert.id }}" data-processed="{{ alert.processed|yesno:'true,false' }}" onclick="viewAlertDetails('{{ alert.id }}', '{{ alert.elder.name }}', '{{ alert.alert_type }}', '{{ alert.description }}', {{ alert.processed|yesno:'true,false' }})">
+                                                查看详情
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 设备监控和活动日志 -->
+            <div class="col-md-4">
+                <!-- 设备状态 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-microchip text-success"></i>
+                        <span>设备监控</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <select class="form-select form-select-sm">
+                                    <option selected>全部设备</option>
+                                    <option>摄像头</option>
+                                    <option>传感器</option>
+                                    <option>智能开关</option>
+                                    <option>智能门锁</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select class="form-select form-select-sm">
+                                    <option selected>全部状态</option>
+                                    <option>在线</option>
+                                    <option>离线</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="device-list">
+                            {% for device in recent_devices %}
+                            <div class="device-card">
+                                <div class="device-icon">
+                                    <i class="fas fa-{% if device.device_type == 'camera' %}video{% elif device.device_type == 'sensor' %}eye{% elif device.device_type == 'switch' %}toggle-on{% elif device.device_type == 'lock' %}lock{% else %}microchip{% endif %}"></i>
+                                </div>
+                                <div class="device-info">
+                                    <div class="d-flex align-items-center">
+                                        <span class="device-status {% if device.status %}status-online{% else %}status-offline{% endif %}"></span>
+                                        <strong>{{ device.name }}</strong>
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ device.location }} | {{ device.elder.name }} | {{ device.last_active|date:"m-d H:i"|default:"未活动" }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="#" class="btn btn-sm btn-primary">查看全部设备</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 系统日志 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-history text-info"></i>
+                        <span>系统日志</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="user-activities p-3">
+                            <!-- 系统日志项 -->
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-user-plus text-success"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div><strong>张三</strong> 注册了新账号</div>
+                                    <div class="activity-time">今天 10:45</div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-sign-in-alt text-primary"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div><strong>李四</strong> 登录了系统</div>
+                                    <div class="activity-time">今天 09:30</div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-exclamation-circle text-warning"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div>触发了 <strong>跌倒监测</strong> 告警</div>
+                                    <div class="activity-time">今天 08:15</div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-cog text-secondary"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div><strong>系统</strong> 自动备份完成</div>
+                                    <div class="activity-time">昨天 23:00</div>
+                                </div>
+                            </div>
+                            
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-plug text-success"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div><strong>新设备</strong> 已添加到系统</div>
+                                    <div class="activity-time">昨天 16:28</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center border-top p-3">
+                            <a href="#" class="btn btn-sm btn-outline-secondary">查看全部日志</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modal_content %}
+<!-- 自定义模态框 (放在独立的block中确保显示在最顶层) -->
+<div id="customModalOverlay"></div>
+<div id="customModalContainer">
+    <div id="customModalHeader">
+        <h5 id="customModalTitle">处理老人关联申请</h5>
+        <button id="customModalCloseBtn" onclick="closeCustomModal()">&times;</button>
+    </div>
+    <div id="customModalBody">
+        <form id="processForm">
+            {% csrf_token %}
+            <input type="hidden" id="requestId" name="requestId">
+            <input type="hidden" id="action" name="action">
+            <div class="mb-3">
+                <label for="remarks" class="form-label">处理备注</label>
+                <textarea class="form-control" id="remarks" name="remarks" rows="3" placeholder="请输入处理备注，拒绝申请时建议填写原因"></textarea>
+            </div>
+            <div id="customModalFooter">
+                <button type="button" class="btn btn-secondary" onclick="closeCustomModal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitProcess()">确认</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 告警详情模态框 -->
+<div class="modal fade" id="alertDetailModal" tabindex="-1" aria-labelledby="alertDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertDetailModalLabel">告警详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-details">
+                    <input type="hidden" id="alertId">
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">老人姓名:</div>
+                        <div class="col-8" id="alertElderName"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">告警类型:</div>
+                        <div class="col-8" id="alertType"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">告警描述:</div>
+                        <div class="col-8" id="alertDescription"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-4 fw-bold">处理状态:</div>
+                        <div class="col-8" id="alertStatus"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="alertModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="processAlertBtn" onclick="processAlertFromModal()">标记为已处理</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% csrf_token %}
+<script>
+// 自定义模态框处理
+function openCustomModal(requestId, action) {
+    // 设置表单值
+    document.getElementById('requestId').value = requestId;
+    document.getElementById('action').value = action;
+    
+    // 设置模态框标题
+    const modalTitle = action === 'approve' ? '批准老人关联申请' : '拒绝老人关联申请';
+    document.getElementById('customModalTitle').textContent = modalTitle;
+    
+    // 显示模态框
+    document.getElementById('customModalOverlay').style.display = 'block';
+    document.getElementById('customModalContainer').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // 防止背景滚动
+}
+
+function closeCustomModal() {
+    document.getElementById('customModalOverlay').style.display = 'none';
+    document.getElementById('customModalContainer').style.display = 'none';
+    document.body.style.overflow = 'auto'; // 恢复背景滚动
+}
+
+function submitProcess() {
+    const requestId = document.getElementById('requestId').value;
+    const action = document.getElementById('action').value;
+    const remarks = document.getElementById('remarks').value;
+    
+    // 创建表单数据
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('remarks', remarks);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    // 发送请求
+    fetch(`/elder_association_request/process/${requestId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            // 重新加载页面显示更新结果
+            location.reload();
+        } else {
+            alert('处理失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('发生错误，请重试');
+    });
+    
+    // 关闭模态框
+    closeCustomModal();
+}
+
+// 外部点击关闭模态框
+document.getElementById('customModalOverlay').addEventListener('click', function() {
+    closeCustomModal();
+});
+
+// 防止点击模态框内部导致关闭
+document.getElementById('customModalContainer').addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeCustomModal();
+    }
+});
+
+// 文档加载完成
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化告警监听
+    initAlertMonitoring();
+    
+    // 创建toast容器
+    const toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    document.body.appendChild(toastContainer);
+    
+    // 在页面加载完成后，直接给处理按钮添加内联事件处理
+    setTimeout(function() {
+        const processAlertBtn = document.getElementById('processAlertBtn');
+        if (processAlertBtn) {
+            console.log('找到处理按钮，添加点击事件');
+            processAlertBtn.onclick = function() {
+                console.log('处理按钮被点击');
+                const alertId = document.getElementById('alertId').value;
+                const alertRow = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+                processAlert(alertId, alertRow);
+            };
+        } else {
+            console.error('找不到处理按钮');
+        }
+    }, 500);
+});
+
+// 处理关联申请 - 此函数在按钮点击时调用
+function processRequest(requestId, action) {
+    openCustomModal(requestId, action);
+}
+
+// 查看告警详情
+function viewAlertDetails(alertId, elderName, alertType, description, isProcessed) {
+    console.log('查看告警详情:', alertId, elderName, alertType, description, isProcessed);
+    
+    // 设置模态框内容
+    document.getElementById('alertId').value = alertId;
+    document.getElementById('alertElderName').textContent = elderName;
+    document.getElementById('alertType').textContent = alertType;
+    document.getElementById('alertDescription').textContent = description;
+    
+    // 设置处理状态
+    const statusElement = document.getElementById('alertStatus');
+    if (isProcessed) {
+        statusElement.innerHTML = '<span class="badge bg-success">已处理</span>';
+        // 隐藏处理按钮
+        document.getElementById('processAlertBtn').style.display = 'none';
+    } else {
+        statusElement.innerHTML = '<span class="badge bg-warning">未处理</span>';
+        // 显示处理按钮
+        document.getElementById('processAlertBtn').style.display = 'block';
+    }
+    
+    // 显示模态框
+    const alertModal = new bootstrap.Modal(document.getElementById('alertDetailModal'));
+    alertModal.show();
+}
+
+// 处理告警的函数
+function processAlert(alertId, rowElement) {
+    console.log('处理告警:', alertId);
+    
+    // 显示处理中状态
+    let statusCell = null;
+    if (rowElement) {
+        statusCell = rowElement.querySelector('.alert-status');
+        if (statusCell) {
+            statusCell.innerHTML = '<span class="badge bg-info"><i class="fas fa-spinner fa-spin"></i> 处理中...</span>';
+        }
+    }
+    
+    // 禁用处理按钮
+    const processBtn = document.getElementById('processAlertBtn');
+    if (processBtn) {
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...';
+    }
+    
+    // 获取CSRF令牌
+    const csrftoken = document.querySelector('#csrf-form [name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    console.log('CSRF令牌:', csrftoken ? '已获取' : '未获取');
+    
+    // 发送处理请求
+    fetch('/api/process_alert/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            alert_id: alertId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // 更新UI
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge bg-success">已处理</span>';
+            }
+            
+            // 更新模态框状态
+            const statusElement = document.getElementById('alertStatus');
+            if (statusElement) {
+                statusElement.innerHTML = '<span class="badge bg-success">已处理</span>';
+            }
+            
+            // 隐藏处理按钮
+            if (processBtn) {
+                processBtn.style.display = 'none';
+            }
+            
+            // 显示成功消息
+            showToast('处理成功', '告警已成功标记为已处理', 'success');
+        } else {
+            // 恢复状态
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge bg-warning">未处理</span>';
+            }
+            
+            // 恢复按钮状态
+            if (processBtn) {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '标记为已处理';
+            }
+            
+            // 显示错误消息
+            showToast('处理失败', data.message || '未知错误', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('处理告警出错:', error);
+        
+        // 恢复状态
+        if (statusCell) {
+            statusCell.innerHTML = '<span class="badge bg-warning">未处理</span>';
+        }
+        
+        // 恢复按钮状态
+        if (processBtn) {
+            processBtn.disabled = false;
+            processBtn.innerHTML = '标记为已处理';
+        }
+        
+        // 显示错误消息
+        showToast('处理失败', '网络错误，请重试', 'danger');
+    });
+}
+
+// 从模态框处理告警的函数
+function processAlertFromModal() {
+    console.log('从模态框处理告警');
+    const alertId = document.getElementById('alertId').value;
+    if (!alertId) {
+        console.error('找不到告警ID');
+        showToast('错误', '找不到告警ID', 'danger');
+        return;
+    }
+    
+    console.log('处理告警ID:', alertId);
+    
+    // 禁用处理按钮
+    const processBtn = document.getElementById('processAlertBtn');
+    if (processBtn) {
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...';
+    }
+    
+    // 更新状态显示
+    const statusElement = document.getElementById('alertStatus');
+    if (statusElement) {
+        statusElement.innerHTML = '<span class="badge bg-info"><i class="fas fa-spinner fa-spin"></i> 处理中...</span>';
+    }
+    
+    // 获取CSRF令牌
+    const csrftoken = document.querySelector('#csrf-form [name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    console.log('CSRF令牌:', csrftoken ? '已获取' : '未获取');
+    
+    // 发送处理请求
+    fetch('/api/process_alert/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            alert_id: alertId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('处理响应:', data);
+        if (data.status === 'success') {
+            // 更新模态框状态
+            if (statusElement) {
+                statusElement.innerHTML = '<span class="badge bg-success">已处理</span>';
+            }
+            
+            // 更新表格中的状态
+            const alertRow = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+            if (alertRow) {
+                const statusCell = alertRow.querySelector('.alert-status');
+                if (statusCell) {
+                    statusCell.innerHTML = '<span class="badge bg-success">已处理</span>';
+                }
+            }
+            
+            // 隐藏处理按钮
+            if (processBtn) {
+                processBtn.style.display = 'none';
+            }
+            
+            // 显示成功消息
+            showToast('处理成功', '告警已成功标记为已处理', 'success');
+        } else {
+            // 恢复状态
+            if (statusElement) {
+                statusElement.innerHTML = '<span class="badge bg-warning">未处理</span>';
+            }
+            
+            // 恢复按钮状态
+            if (processBtn) {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '标记为已处理';
+            }
+            
+            // 显示错误消息
+            showToast('处理失败', data.message || '未知错误', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('处理告警出错:', error);
+        
+        // 恢复状态
+        if (statusElement) {
+            statusElement.innerHTML = '<span class="badge bg-warning">未处理</span>';
+        }
+        
+        // 恢复按钮状态
+        if (processBtn) {
+            processBtn.disabled = false;
+            processBtn.innerHTML = '标记为已处理';
+        }
+        
+        // 显示错误消息
+        showToast('处理失败', '网络错误，请重试', 'danger');
+    });
+}
+
+// 显示提示消息
+function showToast(title, message, type) {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        // 创建toast容器
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(container);
+    }
+    
+    // 创建toast元素
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-${type} text-white">
+                <strong class="me-auto">${title}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('toastContainer').insertAdjacentHTML('beforeend', toastHtml);
+    
+    // 显示toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // 自动移除
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %} 

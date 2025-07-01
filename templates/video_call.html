@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}视频通话 - 智慧养老平台{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-call-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .call-instructions {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .call-instructions h2 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+    
+    .call-instructions ol {
+        padding-left: 20px;
+    }
+    
+    .call-instructions li {
+        margin-bottom: 10px;
+    }
+    
+    .call-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        justify-content: center;
+    }
+    
+    .call-btn {
+        padding: 12px 25px;
+        border-radius: 50px;
+        border: none;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .call-btn.start-call {
+        background-color: #4caf50;
+        color: white;
+    }
+    
+    .call-btn.start-call:hover {
+        background-color: #3d8b40;
+    }
+    
+    .call-btn.end-call {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    .call-btn.end-call:hover {
+        background-color: #d32f2f;
+    }
+    
+    .call-btn i {
+        font-size: 18px;
+    }
+    
+    /* 老人端样式增强 */
+    body.elderly-view .call-instructions {
+        font-size: 18px;
+    }
+    
+    body.elderly-view .call-instructions h2 {
+        font-size: 28px;
+    }
+    
+    body.elderly-view .call-btn {
+        padding: 15px 30px;
+        font-size: 20px;
+    }
+    
+    body.elderly-view .call-btn i {
+        font-size: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="video-call-container">
+    <div class="call-instructions">
+        <h2><i class="fas fa-video me-2"></i>视频通话使用说明</h2>
+        <p>通过智慧养老平台，您可以轻松地进行视频通话，与家人或医护人员保持联系。</p>
+        
+        <ol>
+            <li>点击下方的"开始视频通话"按钮</li>
+            <li>允许浏览器访问您的摄像头和麦克风</li>
+            <li>等待对方接听</li>
+            <li>通话结束后，点击"结束通话"按钮</li>
+        </ol>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            首次使用时，浏览器会请求访问您的摄像头和麦克风权限，请点击"允许"以便正常使用视频通话功能。
+        </div>
+    </div>
+    
+    <div class="call-buttons">
+        <button id="startVideoCallBtn" class="call-btn start-call">
+            <i class="fas fa-video"></i> 开始视频通话
+        </button>
+        <button id="endVideoCallBtn" class="call-btn end-call" disabled>
+            <i class="fas fa-phone-slash"></i> 结束通话
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startVideoCallBtn = document.getElementById('startVideoCallBtn');
+        const endVideoCallBtn = document.getElementById('endVideoCallBtn');
+        
+        if (startVideoCallBtn && endVideoCallBtn) {
+            // 开始视频通话
+            startVideoCallBtn.addEventListener('click', function() {
+                if (window.webRTCManager) {
+                    // 生成随机用户ID作为演示
+                    const remoteUserId = 'user_' + Math.floor(Math.random() * 1000000);
+                    
+                    // 初始化视频通话
+                    window.webRTCManager.initializeCall(remoteUserId).then(success => {
+                        if (success) {
+                            // 发起通话
+                            window.webRTCManager.startCall();
+                            
+                            // 更新按钮状态
+                            startVideoCallBtn.disabled = true;
+                            endVideoCallBtn.disabled = false;
+                        }
+                    });
+                } else {
+                    alert('视频通话功能初始化失败，请刷新页面重试。');
+                }
+            });
+            
+            // 结束视频通话
+            endVideoCallBtn.addEventListener('click', function() {
+                if (window.webRTCManager) {
+                    window.webRTCManager.endCall();
+                    
+                    // 更新按钮状态
+                    startVideoCallBtn.disabled = false;
+                    endVideoCallBtn.disabled = true;
+                }
+            });
+        }
+        
+        // 检测是否支持WebRTC
+        function checkWebRTCSupport() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const callInstructions = document.querySelector('.call-instructions');
+                if (callInstructions) {
+                    const alertHtml = `
+                        <div class="alert alert-danger mt-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            您的浏览器不支持WebRTC视频通话功能。请使用最新版的Chrome、Firefox或Edge浏览器。
+                        </div>
+                    `;
+                    callInstructions.insertAdjacentHTML('beforeend', alertHtml);
+                    
+                    if (startVideoCallBtn) {
+                        startVideoCallBtn.disabled = true;
+                    }
+                }
+            }
+        }
+        
+        // 检查WebRTC支持
+        checkWebRTCSupport();
+    });
+</script>
+{% endblock %} 

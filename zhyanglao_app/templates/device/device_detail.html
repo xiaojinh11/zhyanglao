@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">{{ device.name }}</h4>
+                    <p class="card-text">
+                        <strong>设备类型：</strong> {{ device.get_device_type_display }}<br>
+                        <strong>品牌：</strong> {{ device.brand }}<br>
+                        <strong>型号：</strong> {{ device.model }}<br>
+                        <strong>位置：</strong> {{ device.location }}<br>
+                        <strong>设备ID：</strong> {{ device.device_id }}<br>
+                        <strong>IP地址：</strong> {{ device.ip_address|default:"未设置" }}<br>
+                        <strong>状态：</strong> 
+                        <span class="badge {% if device.status %}badge-success{% else %}badge-danger{% endif %} device-status">
+                            {{ device.status|yesno:"在线,离线" }}
+                        </span><br>
+                        <strong>最后活跃：</strong> 
+                        <span class="last-active">
+                            {{ device.last_active|default:"从未在线" }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">最近告警</h5>
+                    <div class="list-group alert-list">
+                        {% for alert in alerts %}
+                        <div class="list-group-item">
+                            <h6 class="mb-1">{{ alert.title }}</h6>
+                            <p class="mb-1">{{ alert.message }}</p>
+                            <small>{{ alert.timestamp }}</small>
+                        </div>
+                        {% empty %}
+                        <p>暂无告警信息</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">健康数据</h5>
+                    <div class="health-data">
+                        <canvas id="healthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 更新设备状态
+function updateDeviceStatus() {
+    $.get(`/devices/{{ device.device_id }}/status/`, function(data) {
+        $('.device-status')
+            .removeClass('badge-success badge-danger')
+            .addClass(data.status ? 'badge-success' : 'badge-danger')
+            .text(data.status ? '在线' : '离线');
+        
+        if (data.last_active) {
+            $('.last-active').text(new Date(data.last_active).toLocaleString());
+        }
+        
+        if (data.health_data) {
+            updateHealthChart(data.health_data);
+        }
+    });
+}
+
+// 初始化健康数据图表
+const ctx = document.getElementById('healthChart').getContext('2d');
+const healthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: '心率',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// 更新健康数据图表
+function updateHealthChart(data) {
+    const chart = healthChart;
+    if (chart.data.labels.length > 10) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+    }
+    
+    chart.data.labels.push(new Date().toLocaleTimeString());
+    chart.data.datasets[0].data.push(data.heart_rate);
+    chart.update();
+}
+
+// 每30秒更新一次设备状态
+setInterval(updateDeviceStatus, 30000);
+</script>
+{% endblock %}

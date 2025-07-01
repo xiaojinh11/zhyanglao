@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 老人基本信息 -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">{{ elder.name }}</h4>
+                    <p class="card-text">
+                        <strong>年龄：</strong> {{ elder.age }}岁<br>
+                        <strong>性别：</strong> {{ elder.get_gender_display }}<br>
+                        <strong>房间号：</strong> {{ elder.room_number }}<br>
+                        <strong>监护人：</strong> {{ elder.guardian_name }}<br>
+                        <strong>紧急联系电话：</strong> {{ elder.emergency_contact }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- 设备状态 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">设备状态</h5>
+                    <div class="list-group device-list">
+                        {% for device in devices %}
+                        <div class="list-group-item">
+                            <h6 class="mb-1">{{ device.name }}</h6>
+                            <p class="mb-1">{{ device.get_device_type_display }}</p>
+                            <small class="device-status" data-device-id="{{ device.device_id }}">
+                                <span class="badge {% if device.status %}badge-success{% else %}badge-danger{% endif %}">
+                                    {{ device.status|yesno:"在线,离线" }}
+                                </span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 健康数据监控 -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">实时健康数据</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">心率</h6>
+                                    <canvas id="heartRateChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">血压</h6>
+                                    <canvas id="bloodPressureChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">体温</h6>
+                                    <canvas id="temperatureChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">活动量</h6>
+                                    <canvas id="activityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 初始化图表
+const charts = {
+    heartRate: new Chart(document.getElementById('heartRateChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '心率(bpm)',
+                data: [],
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    }),
+    bloodPressure: new Chart(document.getElementById('bloodPressureChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '收缩压',
+                data: [],
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }, {
+                label: '舒张压',
+                data: [],
+                borderColor: 'rgb(54, 162, 235)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    }),
+    temperature: new Chart(document.getElementById('temperatureChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '体温(℃)',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    }),
+    activity: new Chart(document.getElementById('activityChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['低', '中', '高'],
+            datasets: [{
+                label: '活动量统计',
+                data: [0, 0, 0],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(75, 192, 192)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 99, 132)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    })
+};
+
+// 更新图表数据
+function updateCharts(data) {
+    const timestamp = new Date().toLocaleTimeString();
+    
+    // 更新心率图表
+    if (charts.heartRate.data.labels.length > 10) {
+        charts.heartRate.data.labels.shift();
+        charts.heartRate.data.datasets[0].data.shift();
+    }
+    charts.heartRate.data.labels.push(timestamp);
+    charts.heartRate.data.datasets[0].data.push(data.heart_rate);
+    charts.heartRate.update();
+    
+    // 更新血压图表
+    if (charts.bloodPressure.data.labels.length > 10) {
+        charts.bloodPressure.data.labels.shift();
+        charts.bloodPressure.data.datasets[0].data.shift();
+        charts.bloodPressure.data.datasets[1].data.shift();
+    }
+    charts.bloodPressure.data.labels.push(timestamp);
+    charts.bloodPressure.data.datasets[0].data.push(data.blood_pressure_sys);
+    charts.bloodPressure.data.datasets[1].data.push(data.blood_pressure_dia);
+    charts.bloodPressure.update();
+    
+    // 更新体温图表
+    if (charts.temperature.data.labels.length > 10) {
+        charts.temperature.data.labels.shift();
+        charts.temperature.data.datasets[0].data.shift();
+    }
+    charts.temperature.data.labels.push(timestamp);
+    charts.temperature.data.datasets[0].data.push(data.temperature);
+    charts.temperature.update();
+    
+    // 更新活动量图表
+    if (data.activity_level) {
+        const activityLevels = {'低': 0, '中': 1, '高': 2};
+        const index = activityLevels[data.activity_level];
+        charts.activity.data.datasets[0].data[index]++;
+        charts.activity.update();
+    }
+}
+
+// 更新设备状态
+function updateDeviceStatus() {
+    $('.device-status').each(function() {
+        const deviceId = $(this).data('device-id');
+        const statusSpan = $(this).find('.badge');
+        
+        $.get(`/devices/${deviceId}/status/`, function(data) {
+            statusSpan
+                .removeClass('badge-success badge-danger')
+                .addClass(data.status ? 'badge-success' : 'badge-danger')
+                .text(data.status ? '在线' : '离线');
+        });
+    });
+}
+
+// 获取实时数据
+function getRealTimeData() {
+    $.get(`/monitoring/elder/{{ elder.id }}/data/`, function(data) {
+        if (data.health_data) {
+            updateCharts(data.health_data);
+        }
+    });
+}
+
+// 定时更新数据
+setInterval(getRealTimeData, 30000);    // 每30秒更新一次健康数据
+setInterval(updateDeviceStatus, 30000);  // 每30秒更新一次设备状态
+</script>
+{% endblock %}

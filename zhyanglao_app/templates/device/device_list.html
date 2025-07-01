@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">智能设备列表</h2>
+    <div class="row">
+        {% for device in devices %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ device.name }}</h5>
+                    <p class="card-text">
+                        <strong>设备类型：</strong> {{ device.get_device_type_display }}<br>
+                        <strong>位置：</strong> {{ device.location }}<br>
+                        <strong>状态：</strong> 
+                        <span class="badge {% if device.status %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ device.status|yesno:"在线,离线" }}
+                        </span>
+                    </p>
+                    <a href="{% url 'device_detail' device.device_id %}" class="btn btn-primary">查看详情</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">暂无设备数据</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateDeviceStatus() {
+    $('.card').each(function() {
+        const deviceId = $(this).data('device-id');
+        if (deviceId) {
+            $.get(`/devices/${deviceId}/status/`, function(data) {
+                const statusBadge = $(`.device-${deviceId}-status`);
+                statusBadge.removeClass('badge-success badge-danger')
+                    .addClass(data.status ? 'badge-success' : 'badge-danger')
+                    .text(data.status ? '在线' : '离线');
+            });
+        }
+    });
+}
+
+// 每30秒更新一次设备状态
+setInterval(updateDeviceStatus, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 实时监控总览 -->
+        <div class="col-12">
+            <h2 class="mb-4">实时监控仪表盘</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">在线设备</h5>
+                            <h2 id="online-devices-count">{{ devices|length }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">监控中的老人</h5>
+                            <h2 id="monitored-elders-count">{{ elders|length }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">今日告警</h5>
+                            <h2 id="today-alerts-count">{{ alerts|length }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 老人监控列表 -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">监控中的老人</h5>
+                    <div class="row" id="elders-grid">
+                        {% for elder in elders %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ elder.name }}</h5>
+                                    <div class="elder-status" data-elder-id="{{ elder.id }}">
+                                        <p><strong>心率：</strong> <span class="heart-rate">--</span> bpm</p>
+                                        <p><strong>血压：</strong> <span class="blood-pressure">--/--</span> mmHg</p>
+                                        <p><strong>体温：</strong> <span class="temperature">--</span> ℃</p>
+                                        <p><strong>活动状态：</strong> <span class="activity-level">--</span></p>
+                                    </div>
+                                    <a href="{% url 'elder_monitoring' elder.id %}" class="btn btn-primary mt-2">详细监控</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最新告警 -->
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">最新告警</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>老人</th>
+                                    <th>设备</th>
+                                    <th>告警内容</th>
+                                    <th>级别</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-table">
+                                {% for alert in alerts %}
+                                <tr>
+                                    <td>{{ alert.timestamp }}</td>
+                                    <td>{{ alert.device.elder.name }}</td>
+                                    <td>{{ alert.device.name }}</td>
+                                    <td>{{ alert.message }}</td>
+                                    <td>
+                                        <span class="badge {% if alert.level == 'high' %}badge-danger{% elif alert.level == 'medium' %}badge-warning{% else %}badge-info{% endif %}">
+                                            {{ alert.get_level_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ alert.get_status_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 更新老人状态
+function updateElderStatus() {
+    $('.elder-status').each(function() {
+        const elderId = $(this).data('elder-id');
+        const statusDiv = $(this);
+        
+        $.get(`/monitoring/elder/${elderId}/data/`, function(data) {
+            if (data.health_data) {
+                statusDiv.find('.heart-rate').text(data.health_data.heart_rate || '--');
+                statusDiv.find('.blood-pressure').text(
+                    `${data.health_data.blood_pressure_sys || '--'}/${data.health_data.blood_pressure_dia || '--'}`
+                );
+                statusDiv.find('.temperature').text(data.health_data.temperature || '--');
+                statusDiv.find('.activity-level').text(data.health_data.activity_level || '--');
+            }
+        });
+    });
+}
+
+// 更新告警列表
+function updateAlerts() {
+    $.get('/monitoring/alerts/', function(data) {
+        $('#alerts-table').html(data);
+        $('#today-alerts-count').text(data.length);
+    });
+}
+
+// 定时更新数据
+setInterval(updateElderStatus, 30000);  // 每30秒更新一次状态
+setInterval(updateAlerts, 60000);       // 每60秒更新一次告警
+</script>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI智能助手{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 500px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f9f9f9;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 80%;
+    }
+    
+    .user-message {
+        background-color: #DCF8C6;
+        margin-left: auto;
+        margin-right: 0;
+    }
+    
+    .ai-message {
+        background-color: #ECECEC;
+        margin-right: auto;
+        margin-left: 0;
+    }
+    
+    .message-time {
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 5px;
+    }
+    
+    .feedback-buttons {
+        margin-top: 5px;
+    }
+    
+    .feedback-button {
+        margin-right: 5px;
+        font-size: 12px;
+        padding: 2px 5px;
+    }
+    
+    .message-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">AI智能助手 - {{ elder.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chat-container" id="chatContainer">
+                        <!-- 历史消息将在这里显示 -->
+                        {% for interaction in recent_interactions %}
+                            <div class="message user-message">
+                                <div>{{ interaction.query }}</div>
+                                <div class="message-time">{{ interaction.timestamp|date:"Y-m-d H:i" }}</div>
+                            </div>
+                            <div class="message ai-message">
+                                <div>{{ interaction.response }}</div>
+                                <div class="message-time">{{ interaction.timestamp|date:"Y-m-d H:i" }}</div>
+                                {% if interaction.feedback is None %}
+                                <div class="feedback-buttons" data-interaction-id="{{ interaction.id }}">
+                                    <button class="btn btn-sm btn-outline-danger feedback-button" data-value="1">不满意</button>
+                                    <button class="btn btn-sm btn-outline-secondary feedback-button" data-value="2">一般</button>
+                                    <button class="btn btn-sm btn-outline-success feedback-button" data-value="3">满意</button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control message-input" placeholder="请输入您的问题...">
+                        <div class="input-group-append">
+                            <button id="sendButton" class="btn btn-primary">发送</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <p class="text-muted mb-0">AI助手可以帮助回答养老相关问题、提供健康建议和日常关怀。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        // 滚动到最新消息
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        // 发送消息
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                // 添加用户消息到聊天窗口
+                addUserMessage(message);
+                
+                // 清空输入框
+                messageInput.value = '';
+                
+                // 发送到服务器
+                fetch('{% url "ai_query" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        elder_id: {{ elder.id }},
+                        context: {
+                            elder_name: "{{ elder.name }}",
+                            elder_age: {{ elder.age }},
+                            elder_gender: "{{ elder.gender }}",
+                            medical_history: "{{ elder.medical_history|escapejs }}"
+                        }
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 添加AI回复到聊天窗口
+                        addAIMessage(data.response, data.interaction_id);
+                    } else {
+                        // 显示错误
+                        addAIMessage('抱歉，处理您的请求时出现错误。请稍后再试。');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addAIMessage('抱歉，无法连接到服务器。请检查您的网络连接。');
+                });
+            }
+        }
+        
+        // 添加用户消息
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            
+            const messageContent = document.createElement('div');
+            messageContent.textContent = message;
+            
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = new Date().toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(messageTime);
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 添加AI消息
+        function addAIMessage(message, interactionId) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            
+            const messageContent = document.createElement('div');
+            messageContent.textContent = message;
+            
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = new Date().toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(messageTime);
+            
+            // 添加反馈按钮
+            if (interactionId) {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback-buttons';
+                feedbackDiv.dataset.interactionId = interactionId;
+                
+                const btnNegative = document.createElement('button');
+                btnNegative.className = 'btn btn-sm btn-outline-danger feedback-button';
+                btnNegative.dataset.value = '1';
+                btnNegative.textContent = '不满意';
+                
+                const btnNeutral = document.createElement('button');
+                btnNeutral.className = 'btn btn-sm btn-outline-secondary feedback-button';
+                btnNeutral.dataset.value = '2';
+                btnNeutral.textContent = '一般';
+                
+                const btnPositive = document.createElement('button');
+                btnPositive.className = 'btn btn-sm btn-outline-success feedback-button';
+                btnPositive.dataset.value = '3';
+                btnPositive.textContent = '满意';
+                
+                feedbackDiv.appendChild(btnNegative);
+                feedbackDiv.appendChild(btnNeutral);
+                feedbackDiv.appendChild(btnPositive);
+                
+                messageDiv.appendChild(feedbackDiv);
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // 发送按钮点击事件
+        sendButton.addEventListener('click', sendMessage);
+        
+        // 输入框回车事件
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // 反馈按钮点击事件
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('feedback-button')) {
+                const feedbackValue = e.target.dataset.value;
+                const interactionId = e.target.parentElement.dataset.interactionId;
+                
+                // 发送反馈
+                const formData = new FormData();
+                formData.append('interaction_id', interactionId);
+                formData.append('feedback', feedbackValue);
+                
+                fetch('{% url "provide_feedback" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 移除反馈按钮
+                        e.target.parentElement.remove();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

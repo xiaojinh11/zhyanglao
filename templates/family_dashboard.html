@@ -1,0 +1,1748 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}智慧养老平台 - 子女监护主页{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .dashboard-card {
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header-custom {
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: rgba(245, 247, 250, 0.6);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .card-header-custom i {
+        margin-right: 10px;
+        font-size: 1.4rem;
+    }
+    
+    .health-widget {
+        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .status-line {
+        height: 5px;
+        margin: -15px -15px 15px;
+    }
+    
+    .status-normal {
+        background: linear-gradient(to right, #00b09b, #96c93d);
+    }
+    
+    .status-warning {
+        background: linear-gradient(to right, #f2994a, #f2c94c);
+    }
+    
+    .status-critical {
+        background: linear-gradient(to right, #ed213a, #93291e);
+    }
+    
+    .health-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .health-item {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    
+    .health-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border: 2px solid rgba(255,255,255,0.8);
+    }
+    
+    .health-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .heart-icon {
+        background: linear-gradient(45deg, #ff512f, #dd2476);
+    }
+    
+    .blood-icon {
+        background: linear-gradient(45deg, #1d976c, #93f9b9);
+    }
+    
+    .temp-icon {
+        background: linear-gradient(45deg, #4481eb, #04befe);
+    }
+    
+    .sleep-icon {
+        background: linear-gradient(45deg, #834d9b, #d04ed6);
+    }
+    
+    .health-data {
+        text-align: right;
+    }
+    
+    .health-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .health-label {
+        color: #888;
+        font-size: 0.9rem;
+    }
+    
+    .device-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 15px;
+    }
+    
+    .device-item {
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .device-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .device-item.active {
+        background-color: rgba(240, 248, 255, 0.9);
+        border-color: #007bff;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+    
+    .device-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.8));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border: 2px solid rgba(255,255,255,0.8);
+    }
+    
+    .device-icon i {
+        font-size: 1.5rem;
+        color: #2c3e50;
+    }
+    
+    .device-switch {
+        margin-left: auto;
+    }
+    
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #e9ecef;
+        transition: .4s;
+        border-radius: 30px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+    
+    /* 优化导航栏样式 */
+    .breadcrumb {
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+        padding: 8px 15px;
+        margin-bottom: 15px;
+        backdrop-filter: blur(5px);
+    }
+    
+    .breadcrumb-item a {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .breadcrumb-item.active {
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    /* 抽屉菜单样式 */
+    .drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        box-shadow: 0 -8px 24px rgba(0,0,0,0.2);
+        height: 0;
+        max-height: 80vh;
+        overflow: hidden;
+        transition: height 0.3s ease-out;
+        border: 1px solid rgba(0,0,0,0.1);
+        z-index: 1050;
+    }
+    
+    .drawer.open {
+        height: 400px;
+        overflow-y: auto;
+    }
+    
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .drawer-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    
+    .drawer-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #888;
+    }
+    
+    .drawer-body {
+        padding: 20px;
+    }
+    
+    /* 遮罩层 */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1040;
+    }
+    
+    .overlay.open {
+        display: block;
+    }
+    
+    /* 子抽屉样式 */
+    .sub-drawer {
+        z-index: 1051;
+        background-color: #fff;
+    }
+    
+    /* 空调选项卡片样式 */
+    .ac-option-card {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .ac-option-card:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-3px);
+    }
+    
+    .ac-option-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #6c757d;
+    }
+    
+    /* 选项图标样式 */
+    .option-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #6c757d;
+    }
+    
+    .cool-icon {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+    }
+    
+    .heat-icon {
+        background-color: #ffebee;
+        color: #dc3545;
+    }
+    
+    .fan-icon {
+        background-color: #e8f5e9;
+        color: #198754;
+    }
+    
+    /* 选择检查图标 */
+    .mode-check, .speed-check, .direction-check {
+        visibility: hidden;
+        color: #198754;
+    }
+    
+    /* 旋转动画 */
+    .fa-spin-fast {
+        animation: fa-spin 1s infinite linear;
+    }
+    
+    /* 电源按钮样式 */
+    .btn-toggle-power {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        color: #0d6efd;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        margin: 0 auto;
+    }
+    
+    .btn-toggle-power i {
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+    
+    .btn-toggle-power.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    /* 范围滑块样式增强 */
+    .range-container {
+        padding: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-container">
+    <div class="dashboard-header">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-8">
+                <h2>子女监护中心</h2>
+                <p class="text-muted">监护老人：{{ elder.name }} | 上次检查: {% now "Y-m-d H:i" %}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <button type="button" class="btn btn-outline-success">
+                        <i class="fas fa-video"></i> 视频通话
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 健康状态卡片 -->
+            <div class="col-md-8">
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-heartbeat text-danger"></i>
+                        <span>健康状态监测</span>
+                    </div>
+                    <div class="status-line status-normal"></div>
+                    <div class="card-body">
+                        <div class="health-grid">
+                            <div class="health-item">
+                                <div class="health-icon heart-icon">
+                                    <i class="fas fa-heartbeat"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="health-label">心率</div>
+                                    <div class="health-value">72 <small>次/分钟</small></div>
+                                </div>
+                            </div>
+                            <div class="health-item">
+                                <div class="health-icon blood-icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="health-label">血压</div>
+                                    <div class="health-value">120/80 <small>mmHg</small></div>
+                                </div>
+                            </div>
+                            <div class="health-item">
+                                <div class="health-icon temp-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="health-label">体温</div>
+                                    <div class="health-value">36.5 <small>°C</small></div>
+                                </div>
+                            </div>
+                            <div class="health-item">
+                                <div class="health-icon sleep-icon">
+                                    <i class="fas fa-bed"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="health-label">睡眠质量</div>
+                                    <div class="health-value">良好</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container mt-4">
+                            <canvas id="healthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 告警信息 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        <span>告警信息</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>类型</th>
+                                        <th>级别</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if recent_alerts %}
+                                        {% for alert in recent_alerts %}
+                                        <tr>
+                                            <td>{{ alert.timestamp|date:"m-d H:i" }}</td>
+                                            <td>{{ alert.alert_type }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if alert.alert_level == 'critical' %}danger{% elif alert.alert_level == 'high' %}warning{% else %}info{% endif %}">
+                                                    {{ alert.get_alert_level_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if alert.processed %}
+                                                <span class="badge bg-success">已处理</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">未处理</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">详情</button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">暂无告警信息</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 设备控制和视频监控 -->
+            <div class="col-md-4">
+                <!-- 视频监控 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-video text-primary"></i>
+                        <span>实时监控</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="video-feed">
+                            <div class="text-center">
+                                <i class="fas fa-video-slash fa-3x text-muted mb-3"></i>
+                                <p>选择房间开始监控</p>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary">客厅</button>
+                                    <button class="btn btn-sm btn-outline-secondary">卧室</button>
+                                    <button class="btn btn-sm btn-outline-secondary">厨房</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 设备控制 -->
+                <div class="card dashboard-card">
+                    <div class="card-header-custom bg-white">
+                        <i class="fas fa-microchip text-success"></i>
+                        <span>设备控制</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mode-selector mb-3">
+                            <div class="mode-item active">全部</div>
+                            <div class="mode-item">客厅</div>
+                            <div class="mode-item">卧室</div>
+                        </div>
+                        
+                        <div class="device-list">
+                            {% if devices %}
+                                {% for device in devices %}
+                                <div class="device-item mb-3">
+                                    <div class="device-icon">
+                                        <i class="fas fa-{% if device.device_type == 'camera' %}video{% elif device.device_type == 'sensor' %}eye{% elif device.device_type == 'switch' %}toggle-on{% elif device.device_type == 'lock' %}lock{% else %}microchip{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="device-name">{{ device.name }}</div>
+                                        <div class="device-location text-muted small">{{ device.location }}</div>
+                                    </div>
+                                    <div class="device-switch">
+                                        <label class="switch">
+                                            <input type="checkbox" {% if device.status %}checked{% endif %} data-device="{{ device.device_type }}">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-plug text-muted mb-3 fa-2x"></i>
+                                <p>暂无设备</p>
+                                <button class="btn btn-sm btn-primary">添加设备</button>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- 示例设备，实际可以替换为后端数据 -->
+                            <div class="device-item mb-3">
+                                <div class="device-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                                <div>
+                                    <div class="device-name">客厅灯</div>
+                                    <div class="device-location text-muted small">客厅</div>
+                                </div>
+                                <div class="device-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" checked data-device="light">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="device-item mb-3">
+                                <div class="device-icon">
+                                    <i class="fas fa-fan"></i>
+                                </div>
+                                <div>
+                                    <div class="device-name">空调</div>
+                                    <div class="device-location text-muted small">卧室</div>
+                                </div>
+                                <div class="device-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" data-device="ac">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="device-item mb-3">
+                                <div class="device-icon">
+                                    <i class="fas fa-door-open"></i>
+                                </div>
+                                <div>
+                                    <div class="device-name">门锁</div>
+                                    <div class="device-location text-muted small">大门</div>
+                                </div>
+                                <div class="device-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" checked data-device="door">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 抽屉菜单 -->
+<div id="lightDrawer" class="drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">灯光控制</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="row mb-4">
+            <div class="col-6">
+                <div class="card p-3 text-center">
+                    <i class="fas fa-lightbulb fa-2x mb-2 text-warning"></i>
+                    <h5>亮度</h5>
+                    <input type="range" class="form-range" min="0" max="100" value="80" id="brightnessControl">
+                    <div class="mt-2"><span id="brightnessValue">80</span>%</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card p-3 text-center">
+                    <i class="fas fa-temperature-low fa-2x mb-2 text-info"></i>
+                    <h5>色温</h5>
+                    <input type="range" class="form-range" min="2700" max="6500" value="4500" id="colorTempControl">
+                    <div class="mt-2"><span id="colorTempValue">4500</span>K</div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <h5 class="mb-3">预设场景</h5>
+                <div class="d-flex flex-wrap">
+                    <button class="btn btn-outline-primary me-2 mb-2">日常</button>
+                    <button class="btn btn-outline-primary me-2 mb-2">阅读</button>
+                    <button class="btn btn-outline-primary me-2 mb-2">就寝</button>
+                    <button class="btn btn-outline-primary me-2 mb-2">电影</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 空调控制抽屉 -->
+<div id="acDrawer" class="drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">空调控制</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="row mb-4">
+            <div class="col-6">
+                <div class="card p-3 text-center">
+                    <i class="fas fa-thermometer-half fa-2x mb-2 text-danger"></i>
+                    <h5>温度</h5>
+                    <div class="d-flex justify-content-center align-items-center mt-3">
+                        <button class="btn btn-outline-secondary" id="tempDownDrawer">-</button>
+                        <h3 class="mx-4" id="tempValueDrawer">24°C</h3>
+                        <button class="btn btn-outline-secondary" id="tempUpDrawer">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card p-3 text-center">
+                    <i class="fas fa-power-off fa-2x mb-2 text-success"></i>
+                    <h5>电源</h5>
+                    <button class="btn btn-lg mt-2 btn-toggle-power">
+                        <i class="fas fa-power-off"></i> 
+                        <span id="powerStatus">开启</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="card p-3 ac-option-card" data-target="modeOptions">
+                    <div class="d-flex align-items-center">
+                        <div class="ac-option-icon">
+                            <i class="fas fa-wind"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-1">模式</h6>
+                            <div class="text-muted small" id="currentMode">制冷</div>
+                        </div>
+                        <i class="fas fa-chevron-right ms-auto"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card p-3 ac-option-card" data-target="fanSpeedOptions">
+                    <div class="d-flex align-items-center">
+                        <div class="ac-option-icon">
+                            <i class="fas fa-fan"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-1">风速</h6>
+                            <div class="text-muted small" id="currentFanSpeed">二档</div>
+                        </div>
+                        <i class="fas fa-chevron-right ms-auto"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card p-3 ac-option-card" data-target="fanDirectionOptions">
+                    <div class="d-flex align-items-center">
+                        <div class="ac-option-icon">
+                            <i class="fas fa-location-arrow"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-1">风向</h6>
+                            <div class="text-muted small" id="currentFanDirection">摆风</div>
+                        </div>
+                        <i class="fas fa-chevron-right ms-auto"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card p-3 ac-option-card" data-target="timerOptions">
+                    <div class="d-flex align-items-center">
+                        <div class="ac-option-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-1">定时</h6>
+                            <div class="text-muted small" id="currentTimer">关闭</div>
+                        </div>
+                        <i class="fas fa-chevron-right ms-auto"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 空调模式选项 -->
+<div id="modeOptions" class="drawer sub-drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">选择模式</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="list-group list-group-flush">
+            <button class="list-group-item list-group-item-action mode-option" data-mode="cool">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon cool-icon">
+                        <i class="fas fa-snowflake"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">制冷模式</h6>
+                        <small class="text-muted">迅速降低室温</small>
+                    </div>
+                    <i class="fas fa-check ms-auto mode-check" id="coolCheck"></i>
+                </div>
+            </button>
+            <button class="list-group-item list-group-item-action mode-option" data-mode="heat">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon heat-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">制热模式</h6>
+                        <small class="text-muted">提供温暖环境</small>
+                    </div>
+                    <i class="fas fa-check ms-auto mode-check" id="heatCheck"></i>
+                </div>
+            </button>
+            <button class="list-group-item list-group-item-action mode-option" data-mode="fan">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon fan-icon">
+                        <i class="fas fa-wind"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">通风模式</h6>
+                        <small class="text-muted">仅送风不调温</small>
+                    </div>
+                    <i class="fas fa-check ms-auto mode-check" id="fanCheck"></i>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 风速选项 -->
+<div id="fanSpeedOptions" class="drawer sub-drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">风速调节</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="list-group list-group-flush">
+            <button class="list-group-item list-group-item-action fan-speed-option" data-speed="low">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon">
+                        <i class="fas fa-fan"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">一档</h6>
+                        <small class="text-muted">柔和、静音</small>
+                    </div>
+                    <i class="fas fa-check ms-auto speed-check" id="lowCheck"></i>
+                </div>
+            </button>
+            <button class="list-group-item list-group-item-action fan-speed-option" data-speed="medium">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon">
+                        <i class="fas fa-fan fa-spin-fast"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">二档</h6>
+                        <small class="text-muted">适中、舒适</small>
+                    </div>
+                    <i class="fas fa-check ms-auto speed-check" id="mediumCheck"></i>
+                </div>
+            </button>
+            <button class="list-group-item list-group-item-action fan-speed-option" data-speed="high">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon">
+                        <i class="fas fa-fan fa-spin"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">三档</h6>
+                        <small class="text-muted">强劲、迅速</small>
+                    </div>
+                    <i class="fas fa-check ms-auto speed-check" id="highCheck"></i>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 风向选项 -->
+<div id="fanDirectionOptions" class="drawer sub-drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">风向设置</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="list-group list-group-flush">
+            <button class="list-group-item list-group-item-action direction-option" data-direction="fixed">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon">
+                        <i class="fas fa-arrows-alt-v"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">定向</h6>
+                        <small class="text-muted">固定位置送风</small>
+                    </div>
+                    <i class="fas fa-check ms-auto direction-check" id="fixedCheck"></i>
+                </div>
+            </button>
+            <button class="list-group-item list-group-item-action direction-option" data-direction="swing">
+                <div class="d-flex align-items-center">
+                    <div class="option-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">摆风</h6>
+                        <small class="text-muted">自动上下摆动</small>
+                    </div>
+                    <i class="fas fa-check ms-auto direction-check" id="swingCheck"></i>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 定时选项 -->
+<div id="timerOptions" class="drawer sub-drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">定时设置</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="p-3">
+            <h6 class="mb-3">设置关闭时间（0-5小时）</h6>
+            <div class="range-container mb-4">
+                <input type="range" class="form-range" min="0" max="5" step="0.5" id="timerHours" value="0">
+                <div class="d-flex justify-content-between">
+                    <span>0h</span>
+                    <span>1h</span>
+                    <span>2h</span>
+                    <span>3h</span>
+                    <span>4h</span>
+                    <span>5h</span>
+                </div>
+            </div>
+            <div class="text-center mb-3">
+                <h3 id="selectedTime">0小时后关闭</h3>
+                <p class="text-muted small">滑动调节定时器时间</p>
+            </div>
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" id="confirmTimer">确认定时</button>
+                <button class="btn btn-outline-secondary" id="cancelTimer">取消定时</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 门锁控制抽屉 -->
+<div id="doorLockDrawer" class="drawer">
+    <div class="drawer-header">
+        <div class="drawer-title">门锁控制</div>
+        <button class="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="text-center mb-4">
+            <i class="fas fa-door-open fa-4x text-primary mb-3"></i>
+            <h4>门锁状态: <span id="lockStatus">已锁定</span></h4>
+        </div>
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="btn-group btn-group-lg mb-3" role="group">
+                    <button class="btn btn-success" id="lockButton">
+                        <i class="fas fa-lock me-2"></i> 上锁
+                    </button>
+                    <button class="btn btn-danger" id="unlockButton">
+                        <i class="fas fa-unlock-alt me-2"></i> 解锁
+                    </button>
+                </div>
+                <p class="text-muted">解锁后，门锁将在30秒后自动上锁</p>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card p-3">
+                    <h5>最近开门记录</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            今天 09:32
+                            <span class="badge bg-primary">老人本人</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            昨天 16:45
+                            <span class="badge bg-success">家政服务</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            昨天 11:20
+                            <span class="badge bg-primary">老人本人</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 遮罩层 -->
+<div id="overlay" class="overlay"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化图表和其他基本功能
+    initChart();
+    initModePicker();
+    
+    // 设备抽屉功能初始化
+    initDeviceDrawers();
+    
+    // 初始化空调高级功能
+    initAcAdvancedControls();
+    
+    // 初始化设备和抽屉
+    function initializeDrawersAndDevices() {
+        console.log("初始化抽屉和设备...");
+        
+        // 确保抽屉处于初始状态
+        document.querySelectorAll('.drawer').forEach(drawer => {
+            drawer.style.height = '0';
+            drawer.classList.remove('open');
+        });
+        
+        // 确保遮罩层隐藏
+        const overlay = document.getElementById('overlay');
+        if (overlay) {
+            overlay.classList.remove('open');
+        }
+        
+        // 所有设备卡片取消激活状态
+        document.querySelectorAll('.device-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // 所有设备开关初始化
+        document.querySelectorAll('.device-switch input').forEach(sw => {
+            // 保留原始设置的初始状态
+        });
+        
+        console.log("初始化完成");
+    }
+    
+    // 执行初始化
+    initializeDrawersAndDevices();
+    
+    // 初始化图表
+    function initChart() {
+        var ctx = document.getElementById('healthChart').getContext('2d');
+        var healthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['6:00', '9:00', '12:00', '15:00', '18:00', '21:00'],
+                datasets: [{
+                    label: '心率',
+                    data: [75, 72, 78, 76, 80, 73],
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: '血压(高)',
+                    data: [125, 128, 130, 125, 128, 122],
+                    borderColor: '#339af0',
+                    backgroundColor: 'rgba(51, 154, 240, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+    }
+    
+    // 初始化模式选择器
+    function initModePicker() {
+        const modeItems = document.querySelectorAll('.mode-item');
+        modeItems.forEach(item => {
+            item.addEventListener('click', function() {
+                modeItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    }
+    
+    // 初始化设备抽屉功能
+    function initDeviceDrawers() {
+        // 设备类型和抽屉映射
+        const deviceTypeToDrawer = {
+            'light': 'lightDrawer',
+            'ac': 'acDrawer',
+            'door': 'doorLockDrawer'
+        };
+        
+        // 获取所有设备项和开关
+        const deviceItems = document.querySelectorAll('.device-item');
+        const deviceSwitches = document.querySelectorAll('.device-switch input');
+        
+        // 门锁状态
+        let isLocked = true;
+        
+        // 温度控制
+        let currentTemp = 24;
+        
+        // 初始化温度控制
+        document.getElementById('tempUpDrawer')?.addEventListener('click', function() {
+            currentTemp = Math.min(30, currentTemp + 1);
+            updateTemperatureDisplay();
+        });
+        
+        document.getElementById('tempDownDrawer')?.addEventListener('click', function() {
+            currentTemp = Math.max(16, currentTemp - 1);
+            updateTemperatureDisplay();
+        });
+        
+        function updateTemperatureDisplay() {
+            const tempDisplay = document.getElementById('tempValueDrawer');
+            if (tempDisplay) {
+                tempDisplay.textContent = `${currentTemp}°C`;
+            }
+        }
+        
+        // 初始化亮度和色温控制
+        document.getElementById('brightnessControl')?.addEventListener('input', function() {
+            const value = this.value;
+            const valueDisplay = document.getElementById('brightnessValue');
+            if (valueDisplay) {
+                valueDisplay.textContent = value;
+            }
+        });
+        
+        document.getElementById('colorTempControl')?.addEventListener('input', function() {
+            const value = this.value;
+            const valueDisplay = document.getElementById('colorTempValue');
+            if (valueDisplay) {
+                valueDisplay.textContent = value;
+            }
+        });
+        
+        // 设备项点击事件 - 打开对应抽屉
+        deviceItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // 如果点击的是开关元素，不处理
+                if (e.target.classList.contains('slider') || 
+                    e.target.tagName === 'INPUT' ||
+                    e.target.closest('.switch') !== null) {
+                    console.log("点击了开关元素，跳过处理");
+                    return;
+                }
+                
+                console.log("设备卡片点击:", this.querySelector('.device-name')?.textContent);
+                
+                // 获取设备类型
+                const iconElement = this.querySelector('.device-icon i');
+                const deviceType = iconElement.classList.contains('fa-lightbulb') ? 'light' :
+                                  iconElement.classList.contains('fa-fan') ? 'ac' :
+                                  iconElement.classList.contains('fa-door-open') ? 'door' : null;
+                
+                if (!deviceType) {
+                    console.log("未找到设备类型");
+                    return;
+                }
+                
+                console.log("设备类型:", deviceType);
+                
+                // 获取对应的开关
+                const switchInput = this.querySelector('input[type="checkbox"]');
+                
+                // 如果设备卡片已激活，则关闭抽屉并重置状态
+                if (this.classList.contains('active')) {
+                    console.log("关闭抽屉");
+                    // 关闭抽屉
+                    closeAllDrawers();
+                    // 取消激活状态
+                    this.classList.remove('active');
+                    // 关闭开关
+                    if (switchInput) {
+                        switchInput.checked = false;
+                        console.log("关闭开关");
+                    }
+                    // 如果是门锁，更新门锁状态
+                    if (deviceType === 'door') {
+                        isLocked = true;
+                        updateLockStatus();
+                    }
+                } 
+                // 否则打开抽屉并设置激活状态
+                else {
+                    console.log("打开抽屉:", deviceTypeToDrawer[deviceType]);
+                    // 关闭所有抽屉并重置所有设备状态
+                    closeAllDrawers();
+                    resetAllDeviceStatus();
+                    
+                    // 打开对应抽屉
+                    const drawerId = deviceTypeToDrawer[deviceType];
+                    if (drawerId) {
+                        const drawer = document.getElementById(drawerId);
+                        if (drawer) {
+                            drawer.classList.add('open');
+                            document.getElementById('overlay').classList.add('open');
+                        }
+                    }
+                    
+                    // 激活设备卡片
+                    this.classList.add('active');
+                    
+                    // 打开开关
+                    if (switchInput) {
+                        switchInput.checked = true;
+                        console.log("打开开关");
+                    }
+                    
+                    // 如果是门锁，更新门锁状态
+                    if (deviceType === 'door') {
+                        isLocked = false;
+                        updateLockStatus();
+                    }
+                }
+            });
+        });
+        
+        // 设备开关变化事件
+        deviceSwitches.forEach(switchInput => {
+            switchInput.addEventListener('change', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡
+                
+                const deviceItem = this.closest('.device-item');
+                const deviceType = this.getAttribute('data-device');
+                const isChecked = this.checked;
+                
+                console.log(`设备开关变化: ${deviceType}, 状态: ${isChecked ? '打开' : '关闭'}`);
+                
+                // 如果开关打开，打开对应抽屉
+                if (isChecked && deviceType) {
+                    // 关闭所有抽屉并重置所有设备状态，但保持当前设备的开关状态
+                    closeAllDrawers();
+                    resetAllDeviceStatus(deviceType);
+                    
+                    // 打开对应抽屉
+                    const drawerId = deviceTypeToDrawer[deviceType];
+                    if (drawerId) {
+                        const drawer = document.getElementById(drawerId);
+                        if (drawer) {
+                            drawer.classList.add('open');
+                            document.getElementById('overlay').classList.add('open');
+                        }
+                    }
+                    
+                    // 激活设备卡片
+                    deviceItem.classList.add('active');
+                    
+                    // 如果是门锁，更新门锁状态
+                    if (deviceType === 'door') {
+                        isLocked = false;
+                        updateLockStatus();
+                    }
+                } 
+                // 如果开关关闭，关闭对应抽屉
+                else if (!isChecked) {
+                    // 关闭抽屉
+                    closeAllDrawers();
+                    
+                    // 取消激活状态
+                    deviceItem.classList.remove('active');
+                    
+                    // 如果是门锁，更新门锁状态
+                    if (deviceType === 'door') {
+                        isLocked = true;
+                        updateLockStatus();
+                    }
+                }
+            });
+        });
+        
+        // 抽屉关闭按钮点击事件
+        document.querySelectorAll('.drawer-close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function(e) {
+                console.log("点击抽屉关闭按钮");
+                e.stopPropagation(); // 阻止事件冒泡
+                
+                // 查找当前打开的抽屉ID
+                const drawer = this.closest('.drawer');
+                const drawerId = drawer?.id;
+                
+                console.log("关闭抽屉:", drawerId);
+                
+                // 查找对应的设备类型
+                const deviceType = Object.keys(deviceTypeToDrawer).find(
+                    key => deviceTypeToDrawer[key] === drawerId
+                );
+                
+                console.log("设备类型:", deviceType);
+                
+                // 找到对应的设备开关并关闭
+                if (deviceType) {
+                    const deviceSwitch = document.querySelector(`input[data-device="${deviceType}"]`);
+                    if (deviceSwitch) {
+                        console.log("找到对应设备开关，关闭状态");
+                        deviceSwitch.checked = false;
+                        
+                        // 触发change事件以确保UI状态更新
+                        const event = new Event('change');
+                        deviceSwitch.dispatchEvent(event);
+                    } else {
+                        console.log("未找到对应设备开关");
+                        
+                        // 如果没找到直接关联的开关，尝试通过图标查找
+                        const iconClass = deviceType === 'light' ? 'fa-lightbulb' : 
+                                         deviceType === 'ac' ? 'fa-fan' : 
+                                         deviceType === 'door' ? 'fa-door-open' : null;
+                        
+                        if (iconClass) {
+                            // 查找带有该图标的设备卡片
+                            deviceItems.forEach(item => {
+                                const icon = item.querySelector(`.device-icon i.fas.${iconClass}`);
+                                if (icon) {
+                                    console.log("找到设备卡片:", item.querySelector('.device-name')?.textContent);
+                                    // 取消激活状态
+                                    item.classList.remove('active');
+                                    // 关闭开关
+                                    const switchInput = item.querySelector('input[type="checkbox"]');
+                                    if (switchInput) {
+                                        switchInput.checked = false;
+                                        console.log("关闭开关");
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                // 关闭抽屉
+                closeAllDrawers();
+            });
+        });
+        
+        // 遮罩层点击事件
+        document.getElementById('overlay')?.addEventListener('click', function() {
+            console.log("点击遮罩层");
+            
+            // 查找当前打开的抽屉
+            const openDrawer = document.querySelector('.drawer.open');
+            if (openDrawer) {
+                const drawerId = openDrawer.id;
+                console.log("关闭抽屉:", drawerId);
+                
+                // 查找对应的设备类型
+                const deviceType = Object.keys(deviceTypeToDrawer).find(
+                    key => deviceTypeToDrawer[key] === drawerId
+                );
+                
+                console.log("设备类型:", deviceType);
+                
+                // 找到对应的设备卡片
+                if (deviceType) {
+                    const iconClass = deviceType === 'light' ? 'fa-lightbulb' : 
+                                     deviceType === 'ac' ? 'fa-fan' : 
+                                     deviceType === 'door' ? 'fa-door-open' : null;
+                    
+                    if (iconClass) {
+                        // 查找带有该图标的设备卡片
+                        deviceItems.forEach(item => {
+                            const icon = item.querySelector(`.device-icon i.fas.${iconClass}`);
+                            if (icon) {
+                                console.log("找到设备卡片:", item.querySelector('.device-name')?.textContent);
+                                // 取消激活状态
+                                item.classList.remove('active');
+                                // 关闭开关
+                                const switchInput = item.querySelector('input[type="checkbox"]');
+                                if (switchInput) {
+                                    switchInput.checked = false;
+                                    console.log("关闭开关");
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 如果是门锁，更新门锁状态
+                    if (deviceType === 'door') {
+                        isLocked = true;
+                        updateLockStatus();
+                    }
+                }
+            }
+            
+            // 关闭所有抽屉
+            closeAllDrawers();
+        });
+        
+        // 门锁按钮点击事件
+        document.getElementById('lockButton')?.addEventListener('click', function() {
+            isLocked = true;
+            updateLockStatus();
+            
+            // 找到门锁设备并关闭开关
+            const doorSwitch = document.querySelector('input[data-device="door"]');
+            if (doorSwitch) {
+                doorSwitch.checked = false;
+            }
+            
+            // 找到门锁设备卡片并取消激活
+            const doorItem = doorSwitch?.closest('.device-item');
+            if (doorItem) {
+                doorItem.classList.remove('active');
+            }
+        });
+        
+        document.getElementById('unlockButton')?.addEventListener('click', function() {
+            isLocked = false;
+            updateLockStatus();
+            
+            // 找到门锁设备并打开开关
+            const doorSwitch = document.querySelector('input[data-device="door"]');
+            if (doorSwitch) {
+                doorSwitch.checked = true;
+            }
+            
+            // 3秒后自动锁定
+            setTimeout(function() {
+                isLocked = true;
+                updateLockStatus();
+                
+                // 关闭门锁开关
+                if (doorSwitch) {
+                    doorSwitch.checked = false;
+                }
+                
+                // 找到门锁设备卡片并取消激活
+                const doorItem = doorSwitch?.closest('.device-item');
+                if (doorItem) {
+                    doorItem.classList.remove('active');
+                }
+            }, 3000);
+        });
+        
+        // 关闭所有抽屉
+        function closeAllDrawers() {
+            document.querySelectorAll('.drawer').forEach(drawer => {
+                drawer.classList.remove('open');
+            });
+            document.getElementById('overlay').classList.remove('open');
+        }
+        
+        // 重置所有设备状态，可选择保留特定设备的状态
+        function resetAllDeviceStatus(excludeDeviceType = null) {
+            console.log("重置所有设备状态，排除:", excludeDeviceType);
+            
+            // 取消所有设备卡片的激活状态（除了被排除的设备）
+            deviceItems.forEach(item => {
+                const deviceType = item.querySelector('input[type="checkbox"]')?.getAttribute('data-device');
+                if (deviceType !== excludeDeviceType) {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // 关闭所有设备开关（除了被排除的设备）
+            deviceSwitches.forEach(sw => {
+                if (sw.getAttribute('data-device') !== excludeDeviceType) {
+                    sw.checked = false;
+                }
+            });
+            
+            // 如果没有排除门锁，重置门锁状态
+            if (excludeDeviceType !== 'door') {
+                isLocked = true;
+                updateLockStatus();
+            }
+        }
+        
+        // 更新门锁状态
+        function updateLockStatus() {
+            const lockStatus = document.getElementById('lockStatus');
+            const lockButton = document.getElementById('lockButton');
+            const unlockButton = document.getElementById('unlockButton');
+            
+            if (lockStatus) {
+                lockStatus.textContent = isLocked ? '已锁定' : '已解锁';
+                
+                // 更新门锁图标
+                const doorIcon = document.querySelector('#doorLockDrawer .fas.fa-door-open');
+                if (doorIcon) {
+                    if (isLocked) {
+                        doorIcon.classList.remove('text-danger');
+                        doorIcon.classList.add('text-primary');
+                    } else {
+                        doorIcon.classList.remove('text-primary');
+                        doorIcon.classList.add('text-danger');
+                    }
+                }
+                
+                // 更新按钮状态
+                if (lockButton) lockButton.disabled = isLocked;
+                if (unlockButton) unlockButton.disabled = !isLocked;
+            }
+        }
+    }
+    
+    // 初始化空调高级控制功能
+    function initAcAdvancedControls() {
+        console.log("初始化空调高级控制...");
+        
+        // 空调状态
+        let acState = {
+            power: true,
+            mode: "cool",  // cool, heat, fan
+            fanSpeed: "medium", // low, medium, high
+            fanDirection: "swing", // fixed, swing
+            timer: 0 // 小时
+        };
+        
+        // 显示选中状态
+        updateACSelections();
+        
+        // 绑定选项卡片点击事件
+        document.querySelectorAll('.ac-option-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const targetDrawer = document.getElementById(targetId);
+                if (targetDrawer) {
+                    targetDrawer.classList.add('open');
+                }
+            });
+        });
+        
+        // 绑定子抽屉关闭按钮
+        document.querySelectorAll('.sub-drawer .drawer-close').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const drawer = this.closest('.drawer');
+                if (drawer) {
+                    drawer.classList.remove('open');
+                }
+            });
+        });
+        
+        // 绑定模式选择
+        document.querySelectorAll('.mode-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const mode = this.getAttribute('data-mode');
+                acState.mode = mode;
+                updateACSelections();
+                
+                // 关闭子抽屉
+                this.closest('.sub-drawer').classList.remove('open');
+                
+                // 显示提示
+                let message = '';
+                if (mode === 'cool') message = '已开始制冷';
+                if (mode === 'heat') message = '已开始制热';
+                if (mode === 'fan') message = '已切换到通风模式';
+                showToast(message, 'success');
+            });
+        });
+        
+        // 绑定风速选择
+        document.querySelectorAll('.fan-speed-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const speed = this.getAttribute('data-speed');
+                acState.fanSpeed = speed;
+                updateACSelections();
+                
+                // 关闭子抽屉
+                this.closest('.sub-drawer').classList.remove('open');
+                
+                // 显示提示
+                let message = '';
+                if (speed === 'low') message = '风速已设为一档';
+                if (speed === 'medium') message = '风速已设为二档';
+                if (speed === 'high') message = '风速已设为三档';
+                showToast(message, 'info');
+            });
+        });
+        
+        // 绑定风向选择
+        document.querySelectorAll('.direction-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const direction = this.getAttribute('data-direction');
+                acState.fanDirection = direction;
+                updateACSelections();
+                
+                // 关闭子抽屉
+                this.closest('.sub-drawer').classList.remove('open');
+                
+                // 显示提示
+                let message = direction === 'fixed' ? '已设置为定向送风' : '已设置为摆风模式';
+                showToast(message, 'info');
+            });
+        });
+        
+        // 绑定定时器滑动条
+        const timerSlider = document.getElementById('timerHours');
+        const selectedTime = document.getElementById('selectedTime');
+        
+        if (timerSlider && selectedTime) {
+            timerSlider.addEventListener('input', function() {
+                const hours = parseFloat(this.value);
+                selectedTime.textContent = hours > 0 ? 
+                    `${hours}小时后关闭` : 
+                    '0小时后关闭';
+            });
+        }
+        
+        // 确认定时按钮
+        document.getElementById('confirmTimer')?.addEventListener('click', function() {
+            const hours = parseFloat(timerSlider.value);
+            acState.timer = hours;
+            
+            // 更新显示
+            document.getElementById('currentTimer').textContent = 
+                hours > 0 ? `${hours}小时` : '关闭';
+            
+            // 关闭子抽屉
+            document.getElementById('timerOptions').classList.remove('open');
+            
+            // 显示提示
+            if (hours > 0) {
+                showToast(`已设置${hours}小时后关闭`, 'info');
+            } else {
+                showToast('已取消定时', 'info');
+            }
+        });
+        
+        // 取消定时按钮
+        document.getElementById('cancelTimer')?.addEventListener('click', function() {
+            timerSlider.value = 0;
+            selectedTime.textContent = '0小时后关闭';
+            acState.timer = 0;
+            document.getElementById('currentTimer').textContent = '关闭';
+            
+            // 关闭子抽屉
+            document.getElementById('timerOptions').classList.remove('open');
+            
+            // 显示提示
+            showToast('已取消定时', 'info');
+        });
+        
+        // 绑定电源按钮
+        document.querySelector('.btn-toggle-power')?.addEventListener('click', function() {
+            acState.power = !acState.power;
+            this.classList.toggle('active', acState.power);
+            document.getElementById('powerStatus').textContent = acState.power ? '开启' : '关闭';
+            
+            // 显示提示
+            const message = acState.power ? '空调已开启' : '空调已关闭';
+            showToast(message, acState.power ? 'success' : 'info');
+        });
+        
+        // 更新选择状态的函数
+        function updateACSelections() {
+            // 更新模式显示
+            document.getElementById('currentMode').textContent = 
+                acState.mode === 'cool' ? '制冷' : 
+                acState.mode === 'heat' ? '制热' : '通风';
+            
+            // 更新风速显示
+            document.getElementById('currentFanSpeed').textContent = 
+                acState.fanSpeed === 'low' ? '一档' : 
+                acState.fanSpeed === 'medium' ? '二档' : '三档';
+            
+            // 更新风向显示
+            document.getElementById('currentFanDirection').textContent = 
+                acState.fanDirection === 'fixed' ? '定向' : '摆风';
+            
+            // 更新定时显示
+            document.getElementById('currentTimer').textContent = 
+                acState.timer > 0 ? `${acState.timer}小时` : '关闭';
+            
+            // 更新电源状态
+            document.querySelector('.btn-toggle-power')?.classList.toggle('active', acState.power);
+            document.getElementById('powerStatus').textContent = acState.power ? '开启' : '关闭';
+            
+            // 更新选择标记
+            document.querySelectorAll('.mode-check').forEach(check => {
+                check.style.visibility = 'hidden';
+            });
+            document.getElementById(`${acState.mode}Check`).style.visibility = 'visible';
+            
+            document.querySelectorAll('.speed-check').forEach(check => {
+                check.style.visibility = 'hidden';
+            });
+            document.getElementById(`${acState.fanSpeed}Check`).style.visibility = 'visible';
+            
+            document.querySelectorAll('.direction-check').forEach(check => {
+                check.style.visibility = 'hidden';
+            });
+            document.getElementById(`${acState.fanDirection}Check`).style.visibility = 'visible';
+        }
+    }
+    
+    // 显示提示信息
+    function showToast(message, type = 'info') {
+        // 创建toast元素
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type ? 'toast-' + type : ''}`;
+        
+        // 设置内容
+        toast.innerHTML = `
+            <div class="toast-content">${message}</div>
+            <button class="toast-close" onclick="this.parentElement.remove();">&times;</button>
+        `;
+        
+        // 添加到页面
+        document.body.appendChild(toast);
+        
+        // 自动关闭
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+});
+</script>
+{% endblock %} 

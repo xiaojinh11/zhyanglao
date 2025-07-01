@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}智慧养老平台 - 未关联老人{% endblock %}
+
+{% block extra_css %}
+<style>
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .empty-state img {
+        max-width: 200px;
+        margin-bottom: 30px;
+    }
+    
+    .empty-state h2 {
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state p {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+    
+    .empty-state .btn {
+        padding: 10px 25px;
+        font-weight: 500;
+        border-radius: 8px;
+    }
+    
+    /* Custom modal styling */
+    #customModalOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+        display: none;
+    }
+    
+    #customModalContainer {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        width: 90%;
+        max-width: 500px;
+        z-index: 99999;
+        display: none;
+    }
+    
+    #customModalHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    #customModalTitle {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    #customModalCloseBtn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+    
+    #customModalBody {
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #customModalFooter {
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .request-status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+
+    .status-pending {
+        border-left: 5px solid #ffc107;
+    }
+
+    .status-approved {
+        border-left: 5px solid #28a745;
+    }
+
+    .status-rejected {
+        border-left: 5px solid #dc3545;
+    }
+
+    .request-status h3 {
+        margin-top: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .request-status p {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+
+    .status-badge {
+        padding: 3px 10px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .badge-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-approved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="empty-state">
+        <img src="{% static 'img/no-data.svg' %}" alt="未关联老人" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/feather-icons/dist/icons/user-x.svg';">
+        
+        {% if elder_requests %}
+            {% with latest_request=elder_requests.0 %}
+                {% if latest_request.status == 'pending' %}
+                <h2>关联申请审核中</h2>
+                <div class="request-status status-pending">
+                    <span class="status-badge badge-pending">处理中</span>
+                    <h3>您的关联申请正在审核中</h3>
+                    <p>老人姓名: {{ latest_request.elder_name }}</p>
+                    <p>申请时间: {{ latest_request.created_at|date:"Y-m-d H:i" }}</p>
+                    <p class="mt-2">请等待管理员审核，审核通过后将自动关联。</p>
+                </div>
+                {% elif latest_request.status == 'approved' %}
+                <h2>关联申请已通过</h2>
+                <div class="request-status status-approved">
+                    <span class="status-badge badge-approved">已批准</span>
+                    <h3>您的关联申请已通过</h3>
+                    <p>老人姓名: {{ latest_request.elder_name }}</p>
+                    <p>审核时间: {{ latest_request.processed_at|date:"Y-m-d H:i" }}</p>
+                    <p class="mt-2">系统将在下次登录时自动为您展示老人数据。如果问题仍然存在，请联系管理员。</p>
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">刷新页面</a>
+                </div>
+                {% else %}
+                <h2>关联申请被拒绝</h2>
+                <div class="request-status status-rejected">
+                    <span class="status-badge badge-rejected">已拒绝</span>
+                    <h3>您的关联申请未通过审核</h3>
+                    <p>老人姓名: {{ latest_request.elder_name }}</p>
+                    <p>审核时间: {{ latest_request.processed_at|date:"Y-m-d H:i" }}</p>
+                    {% if latest_request.remarks %}
+                    <p>拒绝原因: {{ latest_request.remarks }}</p>
+                    {% endif %}
+                    <p class="mt-2">您可以重新提交申请或联系管理员。</p>
+                    <button class="btn btn-primary mt-3" onclick="openCustomModal()">
+                        <i class="fas fa-user-plus"></i> 重新申请
+                    </button>
+                </div>
+                {% endif %}
+            {% endwith %}
+        {% else %}
+        <h2>您尚未关联任何老人</h2>
+        <p>
+            您的账户目前没有关联任何老人信息。请联系管理员进行关联，或者使用下方按钮提交老人信息申请。
+            关联成功后，您将可以查看老人的健康数据、控制智能设备、接收告警信息等。
+        </p>
+        <div class="row">
+            <div class="col-12">
+                <button class="btn btn-primary w-100" onclick="openCustomModal()">
+                    <i class="fas fa-user-plus"></i> 申请关联老人
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block modal_content %}
+<!-- Custom Modal (在modal_content块中确保最高层级显示) -->
+<div id="customModalOverlay"></div>
+<div id="customModalContainer">
+    <div id="customModalHeader">
+        <h5 id="customModalTitle">申请关联老人</h5>
+        <button id="customModalCloseBtn" onclick="closeCustomModal()">&times;</button>
+    </div>
+    <div id="customModalBody">
+        <form id="elderRequestForm" action="{% url 'submit_elder_association_request' %}" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="elderName" class="form-label">老人姓名</label>
+                <input type="text" class="form-control" id="elderName" name="elderName" required>
+            </div>
+            <div class="mb-3">
+                <label for="elderPhone" class="form-label">老人联系电话</label>
+                <input type="tel" class="form-control" id="elderPhone" name="elderPhone" required>
+            </div>
+            <div class="mb-3">
+                <label for="elderAddress" class="form-label">老人居住地址</label>
+                <textarea class="form-control" id="elderAddress" name="elderAddress" rows="2" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="relationship" class="form-label">与老人关系</label>
+                <select class="form-select" id="relationship" name="relationship" required>
+                    <option value="">请选择...</option>
+                    <option value="子女">子女</option>
+                    <option value="配偶">配偶</option>
+                    <option value="孙辈">孙辈</option>
+                    <option value="其他亲属">其他亲属</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="requestReason" class="form-label">申请原因</label>
+                <textarea class="form-control" id="requestReason" name="requestReason" rows="3" required></textarea>
+            </div>
+            <div id="customModalFooter">
+                <button type="button" class="btn btn-secondary" onclick="closeCustomModal()">取消</button>
+                <button type="submit" class="btn btn-primary">提交申请</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Custom modal functions
+function openCustomModal() {
+    document.getElementById('customModalOverlay').style.display = 'block';
+    document.getElementById('customModalContainer').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+}
+
+function closeCustomModal() {
+    document.getElementById('customModalOverlay').style.display = 'none';
+    document.getElementById('customModalContainer').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+}
+
+// Close modal when clicking on overlay
+document.getElementById('customModalOverlay').addEventListener('click', function(event) {
+    closeCustomModal();
+});
+
+// Prevent closing when clicking inside the modal content
+document.getElementById('customModalContainer').addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+
+// Close on ESC key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeCustomModal();
+    }
+});
+// Display messages
+document.addEventListener('DOMContentLoaded', function() {
+    const messages = JSON.parse('{{ messages|safe|default:"[]" }}');
+    messages.forEach(message => {
+        alert(message);
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,370 @@
+<!-- 确保模态框显示在最顶层的样式 -->
+<style>
+    .emergency-modal {
+        z-index: 100000 !important;
+    }
+    
+    .emergency-modal .modal-dialog {
+        z-index: 100001 !important;
+    }
+    
+    .emergency-modal .modal-content {
+        z-index: 100002 !important;
+    }
+    
+    .modal-backdrop.show {
+        z-index: 99999 !important;
+    }
+    
+    /* 使用!important覆盖任何可能的样式冲突 */
+    body.modal-open {
+        overflow: hidden !important;
+        padding-right: 0 !important;
+    }
+</style>
+
+<!-- 紧急求助确认模态框 -->
+<div class="modal fade emergency-modal" id="emergencyConfirmModal" tabindex="-1" aria-labelledby="emergencyConfirmModalLabel" aria-hidden="true" style="z-index: 100000 !important;">
+    <div class="modal-dialog modal-dialog-centered" style="z-index: 100001 !important;">
+        <div class="modal-content" style="z-index: 100002 !important;">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="emergencyConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>紧急求助确认
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="emergencyForm">
+                    {% csrf_token %}
+                    <p>您确定要发送紧急求助信号吗？</p>
+                    <p>点击"确认发送"后，系统将立即通知护工和家属。</p>
+                    <div class="mb-3">
+                        <label for="emergencyDescription" class="form-label">情况描述（可选）：</label>
+                        <textarea class="form-control" id="emergencyDescription" rows="3" placeholder="请简要描述您的情况，如：我摔倒了，需要帮助..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmEmergencyBtn" onclick="sendEmergencyAlert()">确认发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 紧急求助按钮处理脚本 -->
+<script>
+    // 全局发送紧急求助函数
+    function sendEmergencyAlert() {
+        console.log('全局函数: 发送紧急求助');
+        
+        // 获取描述信息
+        const description = document.getElementById('emergencyDescription')?.value || '老人触发紧急求助';
+        const elderId = document.querySelector('meta[name="elder-id"]')?.content;
+        
+        // 获取CSRF令牌
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        
+        console.log('发送数据:', {
+            elder_id: elderId,
+            description: description,
+            csrftoken: csrftoken ? '已获取' : '未获取'
+        });
+        
+        // 禁用按钮，防止重复点击
+        const confirmBtn = document.getElementById('confirmEmergencyBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 发送中...';
+        }
+        
+        // 使用jQuery发送请求
+        if (typeof $ !== 'undefined') {
+            $.ajax({
+                url: '/api/trigger_emergency/',
+                type: 'POST',
+                data: JSON.stringify({
+                    elder_id: elderId,
+                    alert_type: '紧急求助',
+                    description: description
+                }),
+                contentType: 'application/json',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                success: function(data) {
+                    console.log('请求成功:', data);
+                    if (data.status === 'success') {
+                        // 关闭模态框
+                        $('#emergencyConfirmModal').modal('hide');
+                        
+                        // 显示成功提示
+                        alert('紧急求助已发送，请等待工作人员联系');
+                        
+                        // 振动反馈（如果设备支持）
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate([200, 100, 200]);
+                        }
+                    } else {
+                        alert('发送失败：' + (data.message || '未知错误'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('请求错误:', xhr, status, error);
+                    alert('发送失败，请重试');
+                },
+                complete: function() {
+                    // 恢复按钮状态
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerHTML = '确认发送';
+                    }
+                }
+            });
+        } else {
+            // 使用fetch API发送请求
+            fetch('/api/trigger_emergency/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    elder_id: elderId,
+                    alert_type: '紧急求助',
+                    description: description
+                })
+            })
+            .then(response => {
+                console.log('收到响应:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('解析数据:', data);
+                if (data.status === 'success') {
+                    // 关闭模态框
+                    const modalElement = document.getElementById('emergencyConfirmModal');
+                    const bsModal = bootstrap.Modal.getInstance(modalElement);
+                    if (bsModal) bsModal.hide();
+                    
+                    // 显示成功提示
+                    alert('紧急求助已发送，请等待工作人员联系');
+                    
+                    // 振动反馈（如果设备支持）
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+                } else {
+                    alert('发送失败：' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('请求错误:', error);
+                alert('发送失败，请重试');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '确认发送';
+                }
+            });
+        }
+    }
+
+    // 立即执行函数，确保代码在页面加载后尽快执行
+    (function() {
+        console.log('紧急求助模态框脚本已加载');
+        
+        // 获取模态框元素
+        const modalElement = document.getElementById('emergencyConfirmModal');
+        
+        // 确保模态框存在
+        if (!modalElement) {
+            console.error('找不到紧急求助模态框元素');
+            return;
+        }
+        
+        // 初始化模态框
+        let emergencyModal;
+        try {
+            // 先销毁可能存在的实例
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) existingModal.dispose();
+            
+            // 创建新实例
+            emergencyModal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            
+            console.log('紧急求助模态框已初始化');
+        } catch (e) {
+            console.error('初始化模态框失败:', e);
+            return;
+        }
+        
+        // 显示模态框的函数
+        function showEmergencyModal() {
+            console.log('尝试显示紧急求助模态框');
+            try {
+                // 直接使用jQuery显示模态框
+                if (typeof $ !== 'undefined') {
+                    $('#emergencyConfirmModal').modal('show');
+                    console.log('使用jQuery显示模态框');
+                    return;
+                }
+                
+                // 使用Bootstrap API显示模态框
+                if (emergencyModal) {
+                    emergencyModal.show();
+                    console.log('使用Bootstrap API显示模态框');
+                    return;
+                }
+                
+                // 使用原生方法显示模态框
+                modalElement.style.display = 'block';
+                modalElement.classList.add('show');
+                document.body.classList.add('modal-open');
+                
+                // 创建背景遮罩
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+                
+                console.log('使用原生方法显示模态框');
+            } catch (e) {
+                console.error('显示模态框失败:', e);
+                alert('系统错误，请联系管理员');
+            }
+        }
+        
+        // 紧急求助按钮点击事件
+        document.getElementById('emergencyHelp')?.addEventListener('click', function() {
+            console.log('紧急求助按钮被点击');
+            showEmergencyModal();
+        });
+        
+        // 测试按钮点击事件
+        document.getElementById('testModalBtn')?.addEventListener('click', function() {
+            console.log('测试按钮被点击');
+            showEmergencyModal();
+        });
+        
+        // 确认发送按钮点击事件 - 直接使用onclick属性
+        const confirmEmergencyBtn = document.getElementById('confirmEmergencyBtn');
+        if (confirmEmergencyBtn) {
+            confirmEmergencyBtn.onclick = function() {
+                console.log('确认发送按钮被点击');
+                
+                // 获取描述信息
+                const description = document.getElementById('emergencyDescription')?.value || '老人触发紧急求助';
+                const elderId = document.querySelector('meta[name="elder-id"]')?.content;
+                
+                // 获取CSRF令牌
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+                
+                console.log('发送紧急求助请求:', {
+                    elder_id: elderId,
+                    description: description,
+                    csrftoken: csrftoken ? '已获取' : '未获取'
+                });
+                
+                // 禁用按钮，防止重复点击
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 发送中...';
+                
+                // 使用jQuery发送请求
+                if (typeof $ !== 'undefined') {
+                    $.ajax({
+                        url: '/api/trigger_emergency/',
+                        type: 'POST',
+                        data: JSON.stringify({
+                            elder_id: elderId,
+                            alert_type: '紧急求助',
+                            description: description
+                        }),
+                        contentType: 'application/json',
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        },
+                        success: function(data) {
+                            console.log('请求成功:', data);
+                            if (data.status === 'success') {
+                                // 关闭模态框
+                                $('#emergencyConfirmModal').modal('hide');
+                                
+                                // 显示成功提示
+                                alert('紧急求助已发送，请等待工作人员联系');
+                                
+                                // 振动反馈（如果设备支持）
+                                if ('vibrate' in navigator) {
+                                    navigator.vibrate([200, 100, 200]);
+                                }
+                            } else {
+                                alert('发送失败：' + (data.message || '未知错误'));
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('请求错误:', xhr, status, error);
+                            alert('发送失败，请重试');
+                        },
+                        complete: function() {
+                            // 恢复按钮状态
+                            confirmEmergencyBtn.disabled = false;
+                            confirmEmergencyBtn.innerHTML = '确认发送';
+                        }
+                    });
+                } else {
+                    // 使用fetch API发送请求
+                    fetch('/api/trigger_emergency/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            elder_id: elderId,
+                            alert_type: '紧急求助',
+                            description: description
+                        })
+                    })
+                    .then(response => {
+                        console.log('收到响应:', response);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('解析数据:', data);
+                        if (data.status === 'success') {
+                            // 关闭模态框
+                            const modalElement = document.getElementById('emergencyConfirmModal');
+                            const bsModal = bootstrap.Modal.getInstance(modalElement);
+                            if (bsModal) bsModal.hide();
+                            
+                            // 显示成功提示
+                            alert('紧急求助已发送，请等待工作人员联系');
+                            
+                            // 振动反馈（如果设备支持）
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                        } else {
+                            alert('发送失败：' + (data.message || '未知错误'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('请求错误:', error);
+                        alert('发送失败，请重试');
+                    })
+                    .finally(() => {
+                        // 恢复按钮状态
+                        this.disabled = false;
+                        this.innerHTML = '确认发送';
+                    });
+                }
+            };
+        } else {
+            console.error('找不到确认发送按钮');
+        }
+    })();
+</script> 

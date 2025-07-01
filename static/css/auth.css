@@ -1,0 +1,96 @@
+/* 登录和注册页面专用背景色 */
+body.auth-bg {
+    background: url('/static/img/beij.jpg') no-repeat center center fixed;
+}
+
+/* 登录和注册页面样式 */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 2;
+    background: transparent !important;
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border: 2px solid #000;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+}
+
+.card-header {
+    background: transparent !important;
+    border-bottom: none;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+    color: #000;
+    font-weight: bold;
+    text-align: center;
+}
+
+.card-body {
+    padding: 2rem;
+    background: transparent !important;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #000;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #000;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    color: #000;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-color: #000;
+    box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border: 2px solid #000;
+    color: #fff;
+    font-weight: bold;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: rgba(60, 141, 80, 0.8) !important;
+    color: #fff;
+    border-color: #3c8d50;
+    transform: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-footer {
+    background: transparent !important;
+    border-top: none;
+    padding: 1rem;
+}
+
+.card-footer a {
+    color: #000;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.card-footer a:hover {
+    color: #3c8d50;
+    text-decoration: underline;
+}

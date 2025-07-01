@@ -1,0 +1,2756 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}智慧养老平台 - 老人主页{% endblock %}
+
+{% block extra_css %}
+<!-- 用户信息元数据 -->
+<meta name="user-id" content="{{ request.user.id }}">
+<meta name="user-name" content="{{ request.user.username }}">
+<meta name="elder-id" content="{{ elder.id|default:'' }}">
+<meta name="family-id" content="{{ family_member.id|default:'' }}">
+
+<!-- 紧急求助按钮 -->
+<style>
+    .emergency-help-btn {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        font-size: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.5);
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .emergency-help-btn:hover, .emergency-help-btn:active {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.7);
+    }
+    
+    .emergency-help-btn i {
+        font-size: 32px;
+        margin-bottom: 5px;
+    }
+    
+    /* 按钮点击效果 */
+    .emergency-help-btn:active {
+        transform: scale(0.95);
+    }
+</style>
+
+<style>
+    /* 老人端大按钮样式 */
+    .big-btn-container {
+        padding: 1.5rem;
+    }
+
+    .big-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 180px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        color: #fff;
+        font-size: 3rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* 添加按钮激活状态样式 */
+    .big-btn.active {
+        transform: scale(0.97);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        filter: brightness(1.1);
+    }
+
+    .big-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .big-btn i {
+        font-size: 4.5rem;
+        margin-bottom: 15px;
+    }
+
+    .emergency-btn {
+        background: linear-gradient(to right, #ff416c, #ff4b2b);
+        height: 120px;
+        border-radius: 15px;
+        font-size: 2rem;
+        margin-top: 20px;
+    }
+
+    .light-btn {
+        background: linear-gradient(to right, #ffb347, #ffcc33);
+    }
+
+    .ac-btn {
+        background: linear-gradient(to right, #56ccf2, #2f80ed);
+    }
+
+    .doctor-btn {
+        background: linear-gradient(to right, #11998e, #38ef7d);
+    }
+
+    .call-btn {
+        background: linear-gradient(to right, #834d9b, #d04ed6);
+    }
+    
+    .ai-btn {
+        background: linear-gradient(to right, #4568dc, #b06ab3);
+    }
+    
+    .monitor-btn {
+        background: linear-gradient(to right, #2980b9, #2c3e50);
+    }
+
+    .health-stats {
+        background: rgba(255, 255, 255, 0.96);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(240, 240, 240, 0.8);
+    }
+
+    .health-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.8rem;
+        padding-right: 0.5rem;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 15px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .health-item:hover {
+        transform: translateX(5px);
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .health-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+
+    .health-icon i {
+        font-size: 1.3rem;
+        color: white;
+    }
+
+    .heart-icon {
+        background: linear-gradient(to right, #fd746c, #ff9068);
+    }
+
+    .temp-icon {
+        background: linear-gradient(to right, #f857a6, #ff5858);
+    }
+
+    .sleep-icon {
+        background: linear-gradient(to right, #5f2c82, #49a09d);
+    }
+    
+    .blood-pressure-icon {
+        background: linear-gradient(to right, #614385, #516395);
+    }
+    
+    .blood-oxygen-icon {
+        background: linear-gradient(to right, #36D1DC, #5B86E5);
+    }
+    
+    .blood-sugar-icon {
+        background: linear-gradient(to right, #FF512F, #DD2476);
+    }
+
+    .health-data {
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+    
+    .welcome-banner {
+        background: linear-gradient(to right, #2c3e50, #4ca1af);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* 抽屉菜单样式 */
+    .drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 0;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px 20px 0 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease;
+        z-index: 1000;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .drawer.open {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid rgba(238, 238, 238, 0.8);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .drawer-title {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .drawer-close {
+        font-size: 2.8rem;
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+    }
+    
+    .drawer-body {
+        overflow-y: auto;
+        max-height: calc(80vh - 70px);
+        padding: 20px;
+        padding-bottom: 30px;
+    }
+    
+    .room-control {
+        margin-bottom: 25px;
+        background: rgba(249, 249, 249, 0.9);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(5px);
+    }
+    
+    .room-title {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        color: #333;
+    }
+    
+    .room-icon {
+        margin-right: 10px;
+        font-size: 1.8rem;
+        color: #555;
+    }
+    
+    .slider-container {
+        display: flex;
+        align-items: center;
+        margin-top: 15px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 12px;
+    }
+    
+    .slider-label {
+        min-width: 70px;
+        font-size: 1.6rem;
+    }
+    
+    .slider {
+        flex-grow: 1;
+        height: 25px;
+        border-radius: 12px;
+        appearance: none;
+        background: #ddd;
+        outline: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+        appearance: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #2196F3;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
+    }
+    
+    /* 温度控制样式增大 */
+    .temperature-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 20px 0;
+    }
+    
+    .temp-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        border: none;
+        font-size: 2.5rem;
+        color: #333;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .current-temp {
+        font-size: 3.5rem;
+        font-weight: bold;
+        margin: 0 30px;
+        color: #333;
+        min-width: 120px;
+        text-align: center;
+    }
+    
+    /* 空调控制按钮增大 */
+    .ac-controls {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .ac-control-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        border: none;
+        border-radius: 15px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .ac-control-btn i {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #2196F3;
+    }
+    
+    .ac-control-btn span {
+        font-size: 1.8rem;
+        color: #333;
+    }
+    
+    /* 监控最大化样式 */
+    .monitor-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 1100;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .monitor-fullscreen.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .fullscreen-content {
+        width: 90%;
+        max-width: 1200px;
+        height: 70vh;
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .fullscreen-content img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .monitor-title {
+        color: white;
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+    }
+    
+    .fullscreen-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 1101;
+    }
+
+    .drawer-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .drawer-title {
+        font-size: 2.5rem; /* 增大字体 */
+        font-weight: bold;
+    }
+
+    .drawer-close {
+        font-size: 2.5rem; /* 增大字体 */
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .drawer-body {
+        padding: 1.5rem;
+    }
+
+    .room-control {
+        margin-bottom: 2.5rem;
+    }
+
+    .room-title {
+        font-size: 2.5rem; /* 增大字体 */
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .room-icon {
+        margin-right: 1rem;
+        font-size: 2.5rem; /* 增大图标 */
+    }
+
+    /* 滑动条样式 */
+    .slider-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .slider-label {
+        width: 100px;
+        font-size: 2rem; /* 增大字体 */
+    }
+
+    .slider {
+        flex-grow: 1;
+        height: 30px; /* 增大滑动条 */
+        -webkit-appearance: none;
+        background: #f1f1f1;
+        border-radius: 15px;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 50px; /* 增大滑块 */
+        height: 50px; /* 增大滑块 */
+        border-radius: 50%;
+        background: #4facfe;
+        cursor: pointer;
+    }
+
+    /* 空调控制样式 */
+    .ac-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .ac-control-btn {
+        background: #f8f9fa;
+        border: none;
+        border-radius: 15px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 1.8rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
+    .temperature-control {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2rem 0;
+    }
+
+    .temp-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: none;
+        background: #f8f9fa;
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .current-temp {
+        font-size: 3.5rem; /* 增大字体 */
+        font-weight: bold;
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.5s ease;
+        z-index: 999;
+    }
+
+    .overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* 二级菜单样式 */
+    .submenu {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        z-index: 1001;
+        width: 80%;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        display: none;
+    }
+
+    .submenu.open {
+        display: block;
+    }
+
+    .submenu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+
+    .submenu-title {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .submenu-close {
+        font-size: 1.8rem;
+        background: none;
+        border: none;
+    }
+
+    .option-btn {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        background: #f8f9fa;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.8rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .option-btn.active {
+        background: #4facfe;
+        color: white;
+    }
+    
+    .timer-value {
+        text-align: center;
+        font-size: 1.8rem;
+        margin-top: 1rem;
+    }
+
+    /* 医生名片样式 */
+    .doctor-card {
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .doctor-info {
+        display: flex;
+        padding: 1.5rem;
+    }
+
+    .doctor-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .doctor-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .doctor-details {
+        flex-grow: 1;
+    }
+
+    .doctor-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .doctor-meta {
+        font-size: 1.5rem;
+        color: #777;
+        margin-bottom: 0.5rem;
+    }
+
+    .doctor-phone {
+        font-size: 1.5rem;
+        color: #333;
+    }
+
+    .doctor-actions {
+        display: flex;
+        border-top: 1px solid #eee;
+    }
+
+    .doctor-action-btn {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .doctor-action-btn:first-child {
+        border-right: 1px solid #eee;
+    }
+
+    .doctor-action-btn i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .voice-call {
+        color: #4CAF50;
+    }
+
+    .video-call {
+        color: #2196F3;
+    }
+    
+    /* 时钟容器样式 */
+    .clock-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: linear-gradient(135deg, #2b5876, #4e4376);
+        border-radius: 20px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* 模拟时钟样式 */
+    .analog-clock {
+        position: relative;
+        width: 280px;
+        height: 280px;
+        margin: 0 auto 20px;
+    }
+    
+    .clock-face {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #f5f5f5;
+        border-radius: 50%;
+        border: 10px solid #e9e9e9;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2), inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .clock-hour-marks {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .hour-mark {
+        position: absolute;
+        top: 5%;
+        left: 49%;
+        height: 45%;
+        transform-origin: bottom center;
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .hour-mark span {
+        position: absolute;
+        width: 28px;
+        text-align: center;
+        transform-origin: center;
+    }
+    
+    .clock-hands {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .hand {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform-origin: bottom center;
+        z-index: 10;
+    }
+    
+    .hour-hand {
+        width: 8px;
+        height: 25%;
+        margin-left: -4px;
+        background: #333;
+        border-radius: 4px;
+    }
+    
+    .minute-hand {
+        width: 6px;
+        height: 35%;
+        margin-left: -3px;
+        background: #555;
+        border-radius: 3px;
+    }
+    
+    .second-hand {
+        width: 2px;
+        height: 40%;
+        margin-left: -1px;
+        background: #cc0000;
+        border-radius: 1px;
+    }
+    
+    .center-circle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        background: #cc0000;
+        border-radius: 50%;
+        z-index: 20;
+    }
+    
+    /* 数字时钟样式 */
+    .digital-clock {
+        color: white;
+        text-align: center;
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    .digital-clock .time {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .digital-clock .date {
+        font-size: 1.5rem;
+    }
+    
+    .health-summary {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px 15px;
+        border-left: 5px solid #4facfe;
+    }
+    
+    .health-stats {
+        min-height: 420px;
+        height: 100%;
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #healthStatusTitle:hover {
+        color: #4facfe;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .pulse-animation {
+        animation: pulse 0.5s;
+    }
+
+    .current-water-temp {
+        font-size: 3.5rem; /* 增大字体 */
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+
+
+    
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .card-header-custom i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .card-header-custom span {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .video-call-container {
+        width: 100%;
+    }
+    
+    .video-streams-container {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 60vh;
+        max-height: 500px;
+    }
+    
+    .remote-video-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #202124;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .local-video-container {
+        position: absolute;
+        width: 30%;
+        max-width: 200px;
+        height: auto;
+        bottom: 10px;
+        right: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    #localVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #444;
+    }
+    
+    .call-controls {
+        margin-top: 15px;
+    }
+    
+    .btn-control {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin: 0 5px;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .remote-user-info, .local-user-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 5px 10px;
+        background: rgba(0,0,0,0.5);
+        color: white;
+    }
+    
+    .local-user-info {
+        font-size: 12px;
+    }
+    
+    .animated-ring {
+        animation: ring 2s infinite;
+    }
+    
+    @keyframes ring {
+        0% { transform: rotate(0); }
+        5% { transform: rotate(15deg); }
+        10% { transform: rotate(-15deg); }
+        15% { transform: rotate(15deg); }
+        20% { transform: rotate(-15deg); }
+        25% { transform: rotate(0); }
+        100% { transform: rotate(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF令牌 -->
+{% csrf_token %}
+
+<div class="container">
+    <div class="welcome-banner">
+        <h2>您好，{{ elder.name }}！</h2>
+        <p>今天是 {% now "Y年m月d日 l" %}，天气晴朗，温度20°C</p>
+    </div>
+    
+    <div class="row" style="margin-bottom: 2rem;">
+        <div class="col-6">
+            <div class="health-stats" id="healthStatsContainer">
+                <h3 class="mb-4" id="healthStatusTitle" style="cursor: pointer; font-size: 2rem; font-weight: bold;">您的健康状态 <i class="fas fa-sync-alt" style="font-size: 0.8em;"></i></h3>
+                
+                <div id="healthDataContent" style="flex-grow: 1;">
+                    {% if health_data %}
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="health-item">
+                                <div class="health-icon heart-icon">
+                                    <i class="fas fa-heartbeat"></i>
+                                </div>
+                                <div>
+                                    <div>心率</div>
+                                    <div class="health-data" id="heartRateData">{{ health_data.heart_rate }} 次/分钟</div>
+                                </div>
+                            </div>
+                            
+                            <div class="health-item">
+                                <div class="health-icon blood-oxygen-icon">
+                                    <i class="fas fa-lungs"></i>
+                                </div>
+                                <div>
+                                    <div>血氧</div>
+                                    <div class="health-data" id="bloodOxygenData">{{ health_data.blood_oxygen|default:"98%" }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="health-item">
+                                <div class="health-icon temp-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div>
+                                    <div>体温</div>
+                                    <div class="health-data" id="temperatureData">{{ health_data.temperature }}°C</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-6">
+                            <div class="health-item">
+                                <div class="health-icon blood-pressure-icon">
+                                    <i class="fas fa-stethoscope"></i>
+                                </div>
+                                <div>
+                                    <div>血压</div>
+                                    <div class="health-data" id="bloodPressureData">{{ health_data.blood_pressure|default:"120/80 mmHg" }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="health-item">
+                                <div class="health-icon blood-sugar-icon">
+                                    <i class="fas fa-tint"></i>
+                                </div>
+                                <div>
+                                    <div>血糖</div>
+                                    <div class="health-data" id="bloodSugarData">{{ health_data.blood_sugar|default:"5.6 mmol/L" }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="health-item">
+                                <div class="health-icon sleep-icon">
+                                    <i class="fas fa-bed"></i>
+                                </div>
+                                <div>
+                                    <div>睡眠质量</div>
+                                    <div class="health-data" id="sleepQualityData">{{ health_data.sleep_quality }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="health-summary mt-3" id="healthSummary">
+                        <p style="font-size: 1.4rem; color: #555;">您的健康状况良好，请继续保持规律的作息。</p>
+                    </div>
+                    {% else %}
+                    <div id="loadingHealthData">
+                        <div class="text-center p-3">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #4facfe;"></i>
+                            <p class="mt-2">正在获取您的健康数据...</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <div class="clock-container">
+                <div class="analog-clock">
+                    <div class="clock-face">
+                        <div class="clock-hour-marks">
+                            <span class="hour-mark" style="transform: rotate(0deg)"><span>12</span></span>
+                            <span class="hour-mark" style="transform: rotate(30deg)"><span style="transform: rotate(-30deg)">1</span></span>
+                            <span class="hour-mark" style="transform: rotate(60deg)"><span style="transform: rotate(-60deg)">2</span></span>
+                            <span class="hour-mark" style="transform: rotate(90deg)"><span style="transform: rotate(-90deg)">3</span></span>
+                            <span class="hour-mark" style="transform: rotate(120deg)"><span style="transform: rotate(-120deg)">4</span></span>
+                            <span class="hour-mark" style="transform: rotate(150deg)"><span style="transform: rotate(-150deg)">5</span></span>
+                            <span class="hour-mark" style="transform: rotate(180deg)"><span style="transform: rotate(-180deg)">6</span></span>
+                            <span class="hour-mark" style="transform: rotate(210deg)"><span style="transform: rotate(-210deg)">7</span></span>
+                            <span class="hour-mark" style="transform: rotate(240deg)"><span style="transform: rotate(-240deg)">8</span></span>
+                            <span class="hour-mark" style="transform: rotate(270deg)"><span style="transform: rotate(-270deg)">9</span></span>
+                            <span class="hour-mark" style="transform: rotate(300deg)"><span style="transform: rotate(-300deg)">10</span></span>
+                            <span class="hour-mark" style="transform: rotate(330deg)"><span style="transform: rotate(-330deg)">11</span></span>
+                        </div>
+                        <div class="clock-hands">
+                            <div class="hand hour-hand" id="hourHand"></div>
+                            <div class="hand minute-hand" id="minuteHand"></div>
+                            <div class="hand second-hand" id="secondHand"></div>
+                            <div class="center-circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="digital-clock" id="digitalClock">
+                    <div class="time">00:00:00</div>
+                    <div class="date">2023年1月1日 星期一</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row big-btn-container">
+        <div class="col-6">
+            <div class="big-btn light-btn" id="lightControl">
+                <i class="fas fa-lightbulb"></i>
+                <span>灯光</span>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="big-btn ac-btn" id="acControl">
+                <i class="fas fa-fan"></i>
+                <span>空调</span>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="big-btn doctor-btn" id="doctorConsult">
+                <i class="fas fa-user-md"></i>
+                <span>远程咨询医生</span>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="big-btn call-btn" id="callFamily">
+                <i class="fas fa-phone-alt"></i>
+                <span>呼叫子女</span>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="big-btn ai-btn" id="aiAssistant" style="background: linear-gradient(to right, #26D0CE, #1A2980);">
+                <i class="fas fa-broom"></i>
+                <span>清洁</span>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="big-btn monitor-btn" id="waterHeaterControl">
+                <i class="fas fa-shower"></i>
+                <span>热水器</span>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="big-btn monitor-btn" id="realTimeMonitor" style="background: linear-gradient(to right, #2980b9, #2c3e50);">
+                <i class="fas fa-video"></i>
+                <span>实时监控</span>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="big-btn emergency-btn" id="emergencyHelp" style="position: relative; z-index: 1050;" onclick="showEmergencyModal()">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>紧急求助</span>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 灯光控制抽屉 -->
+    <div class="drawer" id="lightDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">灯光控制</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-couch room-icon"></i>
+                    客厅灯光
+                </div>
+                <div class="slider-container">
+                    <span class="slider-label">亮度</span>
+                    <input type="range" min="0" max="100" value="70" class="slider" id="livingRoomBrightness">
+                </div>
+            </div>
+
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-bed room-icon"></i>
+                    卧室灯光
+                </div>
+                <div class="slider-container">
+                    <span class="slider-label">亮度</span>
+                    <input type="range" min="0" max="100" value="50" class="slider" id="bedroomBrightness">
+                </div>
+            </div>
+
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-utensils room-icon"></i>
+                    厨房灯光
+                </div>
+                <div class="slider-container">
+                    <span class="slider-label">亮度</span>
+                    <input type="range" min="0" max="100" value="90" class="slider" id="kitchenBrightness">
+                </div>
+            </div>
+
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-toilet room-icon"></i>
+                    卫生间灯光
+                </div>
+                <div class="slider-container">
+                    <span class="slider-label">亮度</span>
+                    <input type="range" min="0" max="100" value="80" class="slider" id="bathroomBrightness">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空调控制抽屉 -->
+    <div class="drawer" id="acDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">空调控制</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="temperature-control">
+                <button class="temp-btn" id="tempDown">-</button>
+                <div class="current-temp">27°C</div>
+                <button class="temp-btn" id="tempUp">+</button>
+            </div>
+
+            <div class="ac-controls">
+                <button class="ac-control-btn" id="modeControl">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>模式</span>
+                </button>
+                <button class="ac-control-btn" id="fanSpeedControl">
+                    <i class="fas fa-wind"></i>
+                    <span>风速</span>
+                </button>
+                <button class="ac-control-btn" id="fanDirControl">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>风向</span>
+                </button>
+                <button class="ac-control-btn" id="timerControl">
+                    <i class="far fa-clock"></i>
+                    <span>定时</span>
+                </button>
+                <button class="ac-control-btn" id="sleepControl">
+                    <i class="fas fa-moon"></i>
+                    <span>睡眠</span>
+                </button>
+                <button class="ac-control-btn" id="cleanControl">
+                    <i class="fas fa-broom"></i>
+                    <span>清洁</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 热水器控制抽屉 -->
+    <div class="drawer" id="waterHeaterDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">热水器控制</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-shower room-icon"></i>
+                    水温控制
+                </div>
+                <div class="slider-container">
+                    <span class="slider-label">水温</span>
+                    <input type="range" min="0" max="70" value="50" class="slider" id="waterTemperature">
+                </div>
+                <div class="text-center mt-4">
+                    <h3 class="current-water-temp"><span id="waterTempValue">50</span>°C</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 医生咨询抽屉 -->
+    <div class="drawer" id="doctorDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">远程医生咨询</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <!-- 医生列表 -->
+            <div class="doctor-card" data-user-id="101">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="张医生头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">张医生</div>
+                        <div class="doctor-meta">45岁 · 男</div>
+                        <div class="doctor-phone">电话: 138-8888-8888</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="doctor-card">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="李医生头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">李医生</div>
+                        <div class="doctor-meta">38岁 · 女</div>
+                        <div class="doctor-phone">电话: 139-9999-9999</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="doctor-card">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="王医生头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">王医生</div>
+                        <div class="doctor-meta">52岁 · 男</div>
+                        <div class="doctor-phone">电话: 137-7777-7777</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 子女联系抽屉 -->
+    <div class="drawer" id="familyDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">呼叫家人</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <!-- 子女列表 -->
+            <div class="doctor-card" data-user-id="201">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="小明头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">小明</div>
+                        <div class="doctor-meta">35岁 · 男 · 儿子</div>
+                        <div class="doctor-phone">电话: 135-1234-5678</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="doctor-card" data-user-id="202">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="小丽头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">小丽</div>
+                        <div class="doctor-meta">32岁 · 女 · 女儿</div>
+                        <div class="doctor-phone">电话: 136-8765-4321</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="doctor-card">
+                <div class="doctor-info">
+                    <div class="doctor-avatar">
+                        <img src="https://via.placeholder.com/80" alt="小强头像">
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-name">小强</div>
+                        <div class="doctor-meta">28岁 · 男 · 孙子</div>
+                        <div class="doctor-phone">电话: 138-2468-1357</div>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button class="doctor-action-btn voice-call">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>语音通话</span>
+                    </button>
+                    <button class="doctor-action-btn video-call">
+                        <i class="fas fa-video"></i>
+                        <span>视频通话</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模式选择子菜单 -->
+    <div class="submenu" id="modeSubmenu">
+        <div class="submenu-header">
+            <div class="submenu-title">选择模式</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <button class="option-btn active" data-mode="cool">制冷</button>
+            <button class="option-btn" data-mode="heat">制热</button>
+            <button class="option-btn" data-mode="fan">换气</button>
+        </div>
+    </div>
+    
+    <!-- 风速选择子菜单 -->
+    <div class="submenu" id="fanSpeedSubmenu">
+        <div class="submenu-header">
+            <div class="submenu-title">选择风速</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <button class="option-btn" data-speed="low">一档</button>
+            <button class="option-btn active" data-speed="medium">二挡</button>
+            <button class="option-btn" data-speed="high">三挡</button>
+        </div>
+    </div>
+    
+    <!-- 风向选择子菜单 -->
+    <div class="submenu" id="fanDirSubmenu">
+        <div class="submenu-header">
+            <div class="submenu-title">选择风向</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <button class="option-btn active" data-dir="swing">摆风</button>
+            <button class="option-btn" data-dir="fixed">定向</button>
+        </div>
+    </div>
+    
+    <!-- 定时设置子菜单 -->
+    <div class="submenu" id="timerSubmenu">
+        <div class="submenu-header">
+            <div class="submenu-title">设置定时</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <div class="slider-container">
+                <input type="range" min="0" max="300" step="15" value="0" class="slider" id="timerSlider">
+            </div>
+            <div class="timer-value">0小时0分钟</div>
+        </div>
+    </div>
+
+    <!-- 智能清洁抽屉 -->
+    <div class="drawer" id="aiDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">智能家居清洁</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <div style="text-align: center; padding: 20px 0;">
+                <div class="ai-avatar" id="aiAvatar">
+                    <i class="fas fa-broom" style="font-size: 5rem; color: #4568dc;"></i>
+                    <div class="ai-status" id="aiStatus">准备清洁</div>
+                </div>
+                
+                <div id="aiResponseArea" style="margin: 20px 0; min-height: 150px; font-size: 1.8rem; text-align: left; padding: 15px; border-radius: 15px; background-color: #f8f9fa;">
+                    <p style="color: #666;">您好！请选择需要清洁的区域。</p>
+                </div>
+                
+                <div class="cleaning-controls" style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+                    <button class="cleaning-area-btn" data-area="living" style="width: 48%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 10px; background: #f1f1f1; font-size: 2rem;">
+                        <i class="fas fa-couch" style="display: block; font-size: 2.5rem; margin-bottom: 10px;"></i>
+                        客厅
+                    </button>
+                    <button class="cleaning-area-btn" data-area="bedroom" style="width: 48%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 10px; background: #f1f1f1; font-size: 2rem;">
+                        <i class="fas fa-bed" style="display: block; font-size: 2.5rem; margin-bottom: 10px;"></i>
+                        卧室
+                    </button>
+                    <button class="cleaning-area-btn" data-area="kitchen" style="width: 48%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 10px; background: #f1f1f1; font-size: 2rem;">
+                        <i class="fas fa-utensils" style="display: block; font-size: 2.5rem; margin-bottom: 10px;"></i>
+                        厨房
+                    </button>
+                    <button class="cleaning-area-btn" data-area="bathroom" style="width: 48%; padding: 15px; margin-bottom: 15px; border: none; border-radius: 10px; background: #f1f1f1; font-size: 2rem;">
+                        <i class="fas fa-toilet" style="display: block; font-size: 2.5rem; margin-bottom: 10px;"></i>
+                        卫生间
+                    </button>
+                </div>
+                
+                <div class="ai-controls" style="margin-top: 20px;">
+                    <button id="startCleaning" style="width: 100%; padding: 15px; border: none; border-radius: 10px; background: #4568dc; color: white; font-size: 2.2rem;">
+                        <i class="fas fa-broom" style="margin-right: 10px;"></i>
+                        开始清洁
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 实时监控抽屉 -->
+    <div class="drawer" id="monitorDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">实时监控</div>
+            <button class="drawer-close">×</button>
+        </div>
+        <div class="drawer-body">
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-couch room-icon"></i>
+                    客厅监控
+                </div>
+                <div class="monitor-feed" style="margin-bottom: 20px; background-color: #000; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-video" style="font-size: 3rem; color: #666;"></i>
+                    <span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>
+                </div>
+            </div>
+
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-bed room-icon"></i>
+                    卧室监控
+                </div>
+                <div class="monitor-feed" style="margin-bottom: 20px; background-color: #000; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-video" style="font-size: 3rem; color: #666;"></i>
+                    <span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>
+                </div>
+            </div>
+            
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-utensils room-icon"></i>
+                    厨房监控
+                </div>
+                <div class="monitor-feed" style="margin-bottom: 20px; background-color: #000; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-video" style="font-size: 3rem; color: #666;"></i>
+                    <span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>
+                </div>
+            </div>
+            
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-toilet room-icon"></i>
+                    厕所监控
+                </div>
+                <div class="monitor-feed" style="margin-bottom: 20px; background-color: #000; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-video" style="font-size: 3rem; color: #666;"></i>
+                    <span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>
+                </div>
+            </div>
+            
+            <div class="room-control">
+                <div class="room-title">
+                    <i class="fas fa-door-open room-icon"></i>
+                    门口监控
+                </div>
+                <div class="monitor-feed" style="margin-bottom: 20px; background-color: #000; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-video" style="font-size: 3rem; color: #666;"></i>
+                    <span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景遮罩 -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- 紧急求助弹窗 -->
+    <div class="submenu" id="emergencyConfirm">
+        <div class="submenu-header">
+            <div class="submenu-title">紧急求助</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <p style="font-size: 1.8rem; text-align: center; margin-bottom: 2rem;">确认发送紧急求助信息？</p>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="option-btn" id="cancelEmergency" style="width: 45%;">取消</button>
+                <button class="option-btn active" id="confirmEmergency" style="width: 45%;">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 紧急求助成功弹窗 -->
+    <div class="submenu" id="emergencySuccess">
+        <div class="submenu-header">
+            <div class="submenu-title">求助已发送</div>
+            <button class="submenu-close">×</button>
+        </div>
+        <div class="submenu-body">
+            <p style="font-size: 1.8rem; text-align: center; margin-bottom: 1rem;">
+                <i class="fas fa-check-circle" style="color: #4CAF50; font-size: 4rem; margin-bottom: 1rem; display: block;"></i>
+                紧急求助信息已发送
+            </p>
+            <p style="font-size: 1.6rem; margin-bottom: 1rem;">• 已拨打120急救电话</p>
+            <p style="font-size: 1.6rem; margin-bottom: 1rem;">• 已通知全部家人</p>
+            <p style="font-size: 1.6rem; margin-bottom: 2rem;">• 已通知医生和护工</p>
+            <button class="option-btn active" id="closeEmergencySuccess" style="width: 100%;">确定</button>
+        </div>
+    </div>
+    
+    <!-- 监控画面最大化弹窗 -->
+    <div class="monitor-fullscreen" id="monitorFullscreen">
+        <button class="fullscreen-close" id="closeFullscreen">×</button>
+        <div class="monitor-title" id="fullscreenTitle">客厅监控</div>
+        <div class="fullscreen-content">
+            <img src="https://via.placeholder.com/1280x720.png?text=实时监控画面" id="fullscreenImage" alt="监控画面">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化数字时钟
+    initDigitalClock();
+    
+    // 自动获取健康数据
+    fetchHealthData();
+    
+    // 点击健康状态标题获取数据
+    document.getElementById('healthStatusTitle').addEventListener('click', function() {
+        fetchHealthData();
+        this.classList.add('pulse-animation');
+        setTimeout(() => {
+            this.classList.remove('pulse-animation');
+        }, 500);
+    });
+    
+    // 获取所有抽屉元素
+    const lightControl = document.getElementById('lightControl');
+    const acControl = document.getElementById('acControl');
+    const doctorConsult = document.getElementById('doctorConsult');
+    const callFamily = document.getElementById('callFamily');
+    const aiAssistant = document.getElementById('aiAssistant');
+    const waterHeaterControl = document.getElementById('waterHeaterControl');
+    const realTimeMonitor = document.getElementById('realTimeMonitor');
+    const emergencyHelp = document.getElementById('emergencyHelp');
+    const lightDrawer = document.getElementById('lightDrawer');
+    const acDrawer = document.getElementById('acDrawer');
+    const doctorDrawer = document.getElementById('doctorDrawer');
+    const familyDrawer = document.getElementById('familyDrawer');
+    const aiDrawer = document.getElementById('aiDrawer');
+    const waterHeaterDrawer = document.getElementById('waterHeaterDrawer');
+    const monitorDrawer = document.getElementById('monitorDrawer');
+    const emergencyConfirm = document.getElementById('emergencyConfirm');
+    const emergencySuccess = document.getElementById('emergencySuccess');
+    const overlay = document.getElementById('overlay');
+    const closeButtons = document.querySelectorAll('.drawer-close');
+    const cancelEmergency = document.getElementById('cancelEmergency');
+    const confirmEmergency = document.getElementById('confirmEmergency');
+    const closeEmergencySuccess = document.getElementById('closeEmergencySuccess');
+    
+    // 子菜单元素
+    const modeSubmenu = document.getElementById('modeSubmenu');
+    const fanSpeedSubmenu = document.getElementById('fanSpeedSubmenu');
+    const fanDirSubmenu = document.getElementById('fanDirSubmenu');
+    const timerSubmenu = document.getElementById('timerSubmenu');
+    const submenuCloseButtons = document.querySelectorAll('.submenu-close');
+    
+    // 当前活动的子菜单
+    let activeSubmenu = null;
+    
+    // 获取所有控制按钮
+    const controlButtons = [
+        lightControl, 
+        acControl, 
+        doctorConsult, 
+        callFamily, 
+        aiAssistant, 
+        waterHeaterControl, 
+        realTimeMonitor
+    ];
+    
+    // 将控制按钮与对应的抽屉关联
+    const buttonDrawerMap = {
+        'lightControl': lightDrawer,
+        'acControl': acDrawer,
+        'doctorConsult': doctorDrawer,
+        'callFamily': familyDrawer,
+        'aiAssistant': aiDrawer,
+        'waterHeaterControl': waterHeaterDrawer,
+        'realTimeMonitor': monitorDrawer
+    };
+    
+    // 重置所有按钮状态
+    function resetAllButtonStates() {
+        controlButtons.forEach(button => {
+            button.classList.remove('active');
+        });
+    }
+    
+    // 打开灯光控制抽屉
+    lightControl.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            lightDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+        }
+    });
+    
+    // 打开空调控制抽屉
+    acControl.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            acDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+        }
+    });
+    
+    // 打开医生咨询抽屉
+    doctorConsult.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            doctorDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+        }
+    });
+    
+    // 打开子女联系抽屉
+    callFamily.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            familyDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+        }
+    });
+    
+    // 打开智能助手抽屉
+    aiAssistant.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            aiDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+            // 初始化智能语音助手
+            initAIAssistant();
+        }
+    });
+    
+    // 打开热水器控制抽屉
+    waterHeaterControl.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            waterHeaterDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+        }
+    });
+    
+    // 打开实时监控抽屉
+    realTimeMonitor.addEventListener('click', function() {
+        if (this.classList.contains('active')) {
+            // 如果按钮已经是激活状态，点击后关闭抽屉并重置按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+        } else {
+            // 否则打开抽屉并激活按钮
+            closeAllDrawers();
+            resetAllButtonStates();
+            monitorDrawer.classList.add('open');
+            overlay.classList.add('open');
+            this.classList.add('active');
+            // 加载监控画面
+            loadMonitorFeeds();
+        }
+    });
+    
+    // 紧急求助按钮点击事件
+    emergencyHelp.addEventListener('click', function() {
+        closeAllDrawers();
+        resetAllButtonStates();
+        closeAllSubmenus();
+        emergencyConfirm.classList.add('open');
+        overlay.classList.add('open');
+    });
+    
+    // 取消紧急求助
+    cancelEmergency.addEventListener('click', function() {
+        emergencyConfirm.classList.remove('open');
+        overlay.classList.remove('open');
+    });
+    
+    // 确认紧急求助
+    confirmEmergency.addEventListener('click', function() {
+        // 隐藏确认窗口
+        emergencyConfirm.classList.remove('open');
+        
+        // 模拟拨打120和发送紧急通知
+        console.log("拨打120紧急电话");
+        console.log("向所有家人发送紧急通知");
+        console.log("向医护人员发送紧急通知");
+        
+        // 显示成功窗口
+        setTimeout(function() {
+            emergencySuccess.classList.add('open');
+        }, 500);
+    });
+    
+    // 关闭紧急求助成功窗口
+    closeEmergencySuccess.addEventListener('click', function() {
+        emergencySuccess.classList.remove('open');
+        overlay.classList.remove('open');
+    });
+    
+    // 关闭所有抽屉
+    function closeAllDrawers() {
+        lightDrawer.classList.remove('open');
+        acDrawer.classList.remove('open');
+        doctorDrawer.classList.remove('open');
+        familyDrawer.classList.remove('open');
+        aiDrawer.classList.remove('open');
+        waterHeaterDrawer.classList.remove('open');
+        monitorDrawer.classList.remove('open');
+        closeAllSubmenus();
+    }
+    
+    // 关闭抽屉按钮点击事件
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            closeAllDrawers();
+            resetAllButtonStates();
+            emergencyConfirm.classList.remove('open');
+            emergencySuccess.classList.remove('open');
+            overlay.classList.remove('open');
+        });
+    });
+    
+    // 点击遮罩层关闭抽屉和子菜单
+    overlay.addEventListener('click', function() {
+        closeAllDrawers();
+        resetAllButtonStates();
+        emergencyConfirm.classList.remove('open');
+        emergencySuccess.classList.remove('open');
+        overlay.classList.remove('open');
+    });
+    
+    // 灯光亮度滑块事件
+    const brightnessSliders = document.querySelectorAll('.slider');
+    brightnessSliders.forEach(slider => {
+        slider.addEventListener('input', function() {
+            // 可以在这里添加灯光亮度控制逻辑
+            console.log(`${slider.id} 亮度: ${slider.value}%`);
+            
+            // 更新热水器温度显示
+            if (slider.id === 'waterTemperature') {
+                document.getElementById('waterTempValue').textContent = slider.value;
+            }
+        });
+    });
+    
+    // 空调温度控制
+    const tempDown = document.getElementById('tempDown');
+    const tempUp = document.getElementById('tempUp');
+    const currentTemp = document.querySelector('.current-temp');
+    
+    tempDown.addEventListener('click', function() {
+        let temp = parseInt(currentTemp.textContent);
+        if (temp > 16) {
+            currentTemp.textContent = `${temp - 1}°C`;
+        }
+    });
+    
+    tempUp.addEventListener('click', function() {
+        let temp = parseInt(currentTemp.textContent);
+        if (temp < 30) {
+            currentTemp.textContent = `${temp + 1}°C`;
+        }
+    });
+    
+    // 关闭所有子菜单的函数
+    function closeAllSubmenus() {
+        const submenus = document.querySelectorAll('.submenu');
+        submenus.forEach(menu => {
+            menu.classList.remove('open');
+        });
+        activeSubmenu = null;
+    }
+    
+    // 子菜单关闭按钮事件
+    submenuCloseButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            closeAllSubmenus();
+        });
+    });
+    
+    // 打开模式选择子菜单
+    document.getElementById('modeControl').addEventListener('click', function() {
+        closeAllSubmenus();
+        modeSubmenu.classList.add('open');
+        activeSubmenu = modeSubmenu;
+    });
+    
+    // 打开风速选择子菜单
+    document.getElementById('fanSpeedControl').addEventListener('click', function() {
+        closeAllSubmenus();
+        fanSpeedSubmenu.classList.add('open');
+        activeSubmenu = fanSpeedSubmenu;
+    });
+    
+    // 打开风向选择子菜单
+    document.getElementById('fanDirControl').addEventListener('click', function() {
+        closeAllSubmenus();
+        fanDirSubmenu.classList.add('open');
+        activeSubmenu = fanDirSubmenu;
+    });
+    
+    // 打开定时设置子菜单
+    document.getElementById('timerControl').addEventListener('click', function() {
+        closeAllSubmenus();
+        timerSubmenu.classList.add('open');
+        activeSubmenu = timerSubmenu;
+    });
+    
+    // 模式选择事件
+    const modeOptions = document.querySelectorAll('#modeSubmenu .option-btn');
+    modeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            modeOptions.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const mode = this.getAttribute('data-mode');
+            console.log(`选择模式: ${mode}`);
+            setTimeout(() => {
+                closeAllSubmenus();
+            }, 300);
+        });
+    });
+    
+    // 风速选择事件
+    const speedOptions = document.querySelectorAll('#fanSpeedSubmenu .option-btn');
+    speedOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            speedOptions.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const speed = this.getAttribute('data-speed');
+            console.log(`选择风速: ${speed}`);
+            setTimeout(() => {
+                closeAllSubmenus();
+            }, 300);
+        });
+    });
+    
+    // 风向选择事件
+    const dirOptions = document.querySelectorAll('#fanDirSubmenu .option-btn');
+    dirOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            dirOptions.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            const dir = this.getAttribute('data-dir');
+            console.log(`选择风向: ${dir}`);
+            setTimeout(() => {
+                closeAllSubmenus();
+            }, 300);
+        });
+    });
+    
+    // 定时滑块事件
+    const timerSlider = document.getElementById('timerSlider');
+    const timerValue = document.querySelector('.timer-value');
+    
+    timerSlider.addEventListener('input', function() {
+        const minutes = parseInt(this.value);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        timerValue.textContent = `${hours}小时${mins}分钟`;
+    });
+    
+    // 睡眠模式和清洁模式按钮事件
+    document.getElementById('sleepControl').addEventListener('click', function() {
+        alert('睡眠模式已启动');
+    });
+    
+    document.getElementById('cleanControl').addEventListener('click', function() {
+        alert('清洁模式已启动');
+    });
+    
+    // 医生通话按钮事件
+    const doctorVoiceButtons = document.querySelectorAll('.voice-call');
+    doctorVoiceButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const doctorName = this.closest('.doctor-card').querySelector('.doctor-name').textContent;
+            alert(`正在与${doctorName}进行语音通话...`);
+        });
+    });
+    
+    // 初始化时钟函数
+    function initDigitalClock() {
+        const clockDisplay = document.getElementById('digitalClock');
+        const timeDisplay = clockDisplay.querySelector('.time');
+        const dateDisplay = clockDisplay.querySelector('.date');
+        
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
+        
+        // 更新时钟
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            // 更新数字时钟
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            timeDisplay.textContent = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+            
+            // 更新日期
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const day = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
+            dateDisplay.textContent = `${year}年${month}月${date}日 星期${day}`;
+            
+            // 更新模拟时钟的指针
+            // 时针: 每小时旋转30度 (360度/12小时), 每分钟额外旋转0.5度 (30度/60分钟)
+            const hourDegrees = (hours % 12) * 30 + minutes * 0.5;
+            hourHand.style.transform = `rotate(${hourDegrees}deg)`;
+            
+            // 分针: 每分钟旋转6度 (360度/60分钟)
+            const minuteDegrees = minutes * 6;
+            minuteHand.style.transform = `rotate(${minuteDegrees}deg)`;
+            
+            // 秒针: 每秒旋转6度 (360度/60秒)
+            const secondDegrees = seconds * 6;
+            secondHand.style.transform = `rotate(${secondDegrees}deg)`;
+        }
+        
+        // 立即更新一次
+        updateClock();
+        
+        // 每秒更新
+        setInterval(updateClock, 1000);
+    }
+    
+    // 获取健康数据函数 - 真实物联网设备连接
+    function fetchHealthData() {
+        // 显示加载动画
+        document.getElementById('healthDataContent').innerHTML = `
+            <div id="loadingHealthData">
+                <div class="text-center p-3">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #4facfe;"></i>
+                    <p class="mt-2">正在连接智能手环获取健康数据...</p>
+                </div>
+            </div>
+        `;
+        
+        // 真实的物联网设备连接 - 通过WebSocket或HTTP请求获取数据
+        connectToIoTDevice()
+            .then(data => {
+                // 成功获取数据后更新UI
+                updateHealthData(data);
+            })
+            .catch(error => {
+                console.error("设备连接失败:", error);
+                document.getElementById('healthDataContent').innerHTML = `
+                    <div class="text-center p-3">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #ff4b2b;"></i>
+                        <p class="mt-2">设备连接失败，请检查手环是否正常工作</p>
+                        <button class="btn btn-primary mt-3" onclick="fetchHealthData()">重试</button>
+                    </div>
+                `;
+            });
+    }
+    
+    // 连接物联网设备函数
+    function connectToIoTDevice() {
+        return new Promise((resolve, reject) => {
+            // 实际应用中，这里应该是真实的物联网设备连接代码
+            // 例如通过WebSocket或HTTP API与智能手环通信
+            
+            // 使用API密钥和设备ID
+            const apiKey = "YOUR_API_KEY"; // 请替换为实际的API密钥
+            const deviceId = "SMART_BRACELET_ID"; // 请替换为实际的设备ID
+            
+            // 模拟连接延迟 - 实际应用中应替换为真实的API调用
+            setTimeout(() => {
+                // 成功连接后返回数据
+                // 这里是模拟数据，实际应用中应该是从设备获取的真实数据
+                const healthData = {
+                    heart_rate: 72,
+                    temperature: 36.5,
+                    sleep_quality: "良好",
+                    blood_pressure: "118/76",
+                    blood_oxygen: "97%",
+                    blood_sugar: "5.4"
+                };
+                
+                resolve(healthData);
+                
+                // 如果连接失败，使用 reject(error) 处理错误
+            }, 2000);
+        });
+    }
+    
+    // 更新健康数据UI
+    function updateHealthData(data) {
+        // 分析数据，生成健康建议
+        let healthSummary = generateHealthAdvice(data);
+        
+                    // 更新UI
+            document.getElementById('healthDataContent').innerHTML = `
+                <div class="row">
+                    <div class="col-6">
+                        <div class="health-item">
+                            <div class="health-icon heart-icon">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div>
+                                <div>心率</div>
+                                <div class="health-data" id="heartRateData">${data.heart_rate} 次/分钟</div>
+                            </div>
+                        </div>
+                        
+                        <div class="health-item">
+                            <div class="health-icon blood-oxygen-icon">
+                                <i class="fas fa-lungs"></i>
+                            </div>
+                            <div>
+                                <div>血氧</div>
+                                <div class="health-data" id="bloodOxygenData">${data.blood_oxygen}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="health-item">
+                            <div class="health-icon temp-icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            <div>
+                                <div>体温</div>
+                                <div class="health-data" id="temperatureData">${data.temperature}°C</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6">
+                        <div class="health-item">
+                            <div class="health-icon blood-pressure-icon">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                            <div>
+                                <div>血压</div>
+                                <div class="health-data" id="bloodPressureData">${data.blood_pressure} mmHg</div>
+                            </div>
+                        </div>
+                        
+                        <div class="health-item">
+                            <div class="health-icon blood-sugar-icon">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div>
+                                <div>血糖</div>
+                                <div class="health-data" id="bloodSugarData">${data.blood_sugar} mmol/L</div>
+                            </div>
+                        </div>
+                        
+                        <div class="health-item">
+                            <div class="health-icon sleep-icon">
+                                <i class="fas fa-bed"></i>
+                            </div>
+                            <div>
+                                <div>睡眠质量</div>
+                                <div class="health-data" id="sleepQualityData">${data.sleep_quality}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="health-summary mt-3" id="healthSummary">
+                    <p style="font-size: 1.4rem; color: #555;">${healthSummary}</p>
+                </div>
+            `;
+        
+        console.log("健康数据已更新，来自智能手环实时监测");
+    }
+    
+    // 生成健康建议
+    function generateHealthAdvice(data) {
+        // 根据健康数据生成个性化建议
+        if (parseInt(data.heart_rate) > 90) {
+            return "您的心率偏高，建议放松休息，避免剧烈运动。";
+        } 
+        
+        const bloodPressureArr = data.blood_pressure.split('/');
+        const systolic = parseInt(bloodPressureArr[0]);
+        const diastolic = parseInt(bloodPressureArr[1]);
+        
+        if (systolic > 130 || diastolic > 85) {
+            return "您的血压偏高，请注意休息，减少盐分摄入。";
+        }
+        
+        const bloodOxygen = parseInt(data.blood_oxygen);
+        if (bloodOxygen < 95) {
+            return "您的血氧水平偏低，建议增加户外活动，保持室内通风。";
+        }
+        
+        const bloodSugar = parseFloat(data.blood_sugar);
+        if (bloodSugar > 6.1) {
+            return "您的血糖偏高，建议控制碳水化合物摄入，定期监测血糖。";
+        }
+        
+        if (parseFloat(data.temperature) > 37.0) {
+            return "您的体温略高，注意多喝水，如持续偏高请及时就医。";
+        }
+        
+        if (data.sleep_quality === "一般") {
+            return "您的睡眠质量一般，建议保持规律作息，睡前避免使用电子设备。";
+        }
+        
+        return "您的各项健康指标正常，请继续保持规律的作息和健康的生活方式。";
+    }
+    
+    // 智能清洁系统初始化
+    function initAIAssistant() {
+        const aiStatus = document.getElementById('aiStatus');
+        const aiResponseArea = document.getElementById('aiResponseArea');
+        const startCleaning = document.getElementById('startCleaning');
+        const cleaningAreaBtns = document.querySelectorAll('.cleaning-area-btn');
+        
+        aiStatus.textContent = '准备清洁';
+        let selectedAreas = [];
+        
+        // 区域选择事件
+        cleaningAreaBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const area = this.getAttribute('data-area');
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    this.style.background = '#f1f1f1';
+                    this.style.color = 'black';
+                    selectedAreas = selectedAreas.filter(a => a !== area);
+                } else {
+                    this.classList.add('active');
+                    this.style.background = '#4facfe';
+                    this.style.color = 'white';
+                    selectedAreas.push(area);
+                }
+            });
+        });
+        
+        // 开始清洁事件
+        startCleaning.addEventListener('click', function() {
+            if (selectedAreas.length === 0) {
+                aiResponseArea.innerHTML = '<p style="color: #ff4d4d;">请先选择要清洁的区域</p>';
+                return;
+            }
+            
+            aiStatus.textContent = '正在清洁中...';
+            
+            // 模拟清洁机器人工作
+            setTimeout(function() {
+                const areaNames = {
+                    'living': '客厅',
+                    'bedroom': '卧室',
+                    'kitchen': '厨房',
+                    'bathroom': '卫生间'
+                };
+                
+                let cleaningAreas = selectedAreas.map(a => areaNames[a]).join('、');
+                aiResponseArea.innerHTML = `<p>已开始清洁：${cleaningAreas}</p><p>预计完成时间: 30分钟</p>`;
+                
+                setTimeout(function() {
+                    aiStatus.textContent = '清洁完成';
+                    aiResponseArea.innerHTML += '<p style="color: #4CAF50; margin-top: 15px;">清洁已完成！请检查清洁效果</p>';
+                    
+                    // 重置选择的区域
+                    cleaningAreaBtns.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.style.background = '#f1f1f1';
+                        btn.style.color = 'black';
+                    });
+                    selectedAreas = [];
+                }, 5000);
+            }, 2000);
+        });
+    }
+    
+    // 加载监控画面
+    function loadMonitorFeeds() {
+        const monitorFeeds = document.querySelectorAll('.monitor-feed');
+        const monitorFullscreen = document.getElementById('monitorFullscreen');
+        const fullscreenImage = document.getElementById('fullscreenImage');
+        const fullscreenTitle = document.getElementById('fullscreenTitle');
+        const closeFullscreen = document.getElementById('closeFullscreen');
+        
+        // 模拟加载监控画面
+        monitorFeeds.forEach((feed, index) => {
+            feed.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #666;"></i><span style="color: #666; margin-left: 10px; font-size: 1.5rem;">加载中...</span>';
+            
+            // 实际实现时，这里应该是连接到监控摄像头的代码
+            setTimeout(function() {
+                const roomNames = ["客厅", "卧室", "厨房", "厕所", "门口"];
+                const roomName = roomNames[index] || `区域${index+1}`;
+                
+                // 模拟监控画面
+                const img = document.createElement('img');
+                img.src = `https://via.placeholder.com/640x360.png?text=${roomName}监控画面`;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '10px';
+                img.style.cursor = 'pointer';
+                img.alt = `${roomName}监控画面`;
+                img.dataset.room = roomName;
+                
+                // 清空加载中的内容
+                feed.innerHTML = '';
+                feed.appendChild(img);
+                
+                // 添加点击事件，点击放大
+                img.addEventListener('click', function() {
+                    // 设置全屏图片
+                    fullscreenImage.src = this.src;
+                    fullscreenTitle.textContent = `${this.dataset.room}监控`;
+                    
+                    // 显示全屏
+                    monitorFullscreen.classList.add('active');
+                });
+            }, 1500 + (index * 500));
+        });
+        
+        // 关闭全屏监控
+        closeFullscreen.addEventListener('click', function() {
+            monitorFullscreen.classList.remove('active');
+        });
+    }
+    
+    const doctorVideoButtons = document.querySelectorAll('.video-call');
+    doctorVideoButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const doctorName = this.closest('.doctor-card').querySelector('.doctor-name').textContent;
+            alert(`正在与${doctorName}进行视频通话...`);
+        });
+    });
+});
+
+// 初始化功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化视频通话功能
+    initVideoCall();
+});
+
+// 安全监控相关功能
+</script>
+
+<!-- WebRTC视频通话对话框 -->
+<div class="modal fade" id="videoCallModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="callModalTitle">视频通话</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="video-call-container">
+                    <!-- 通话状态指示 -->
+                    <div class="call-status text-center mb-3">
+                        <div id="callStatusText" class="h5">正在连接...</div>
+                        <div id="callTimer" class="text-muted">00:00</div>
+                    </div>
+                    
+                    <!-- 视频显示区域 -->
+                    <div class="video-streams-container">
+                        <!-- 远程视频（大屏幕） -->
+                        <div class="remote-video-container">
+                            <video id="remoteVideo" autoplay playsinline></video>
+                            <div class="remote-user-info">
+                                <span id="remoteUserName">对方</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 本地视频（小窗口） -->
+                        <div class="local-video-container">
+                            <video id="localVideo" autoplay playsinline muted></video>
+                            <div class="local-user-info">
+                                <span>我</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 通话控制按钮 -->
+                    <div class="call-controls text-center mt-3">
+                        <button id="toggleMicBtn" class="btn btn-outline-dark btn-control">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button id="toggleVideoBtn" class="btn btn-outline-dark btn-control">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button id="switchCameraBtn" class="btn btn-outline-dark btn-control">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button id="endCallBtn" class="btn btn-danger btn-control">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 通话来电显示区域 -->
+                <div id="incomingCallContainer" style="display:none">
+                    <div class="text-center">
+                        <i class="fas fa-phone-volume fa-3x text-primary animated-ring mb-3"></i>
+                        <h4 id="incomingCallText">收到视频通话请求</h4>
+                        <p id="callerName" class="text-muted">来自: 未知</p>
+                        <div class="mt-4">
+                            <button id="acceptCallBtn" class="btn btn-success me-2">
+                                <i class="fas fa-phone"></i> 接听
+                            </button>
+                            <button id="rejectCallBtn" class="btn btn-danger">
+                                <i class="fas fa-phone-slash"></i> 拒绝
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/webrtc.js' %}"></script>
+<script src="{% static 'js/emergency.js' %}"></script>
+<script>
+// 初始化视频通话功能
+function initVideoCall() {
+    console.log("初始化视频通话功能...");
+    
+    // DOM元素
+    const videoCallModal = document.getElementById('videoCallModal');
+    const callStatusText = document.getElementById('callStatusText');
+    const remoteUserName = document.getElementById('remoteUserName');
+    const toggleMicBtn = document.getElementById('toggleMicBtn');
+    const toggleVideoBtn = document.getElementById('toggleVideoBtn');
+    const endCallBtn = document.getElementById('endCallBtn');
+    const acceptCallBtn = document.getElementById('acceptCallBtn');
+    const rejectCallBtn = document.getElementById('rejectCallBtn');
+    const videoCallContainer = document.querySelector('.video-call-container');
+    const incomingCallContainer = document.getElementById('incomingCallContainer');
+    const callerName = document.getElementById('callerName');
+    
+    // 获取当前用户信息
+    const currentUserId = document.querySelector('meta[name="user-id"]')?.content || "0";
+    const currentUserName = document.querySelector('meta[name="user-name"]')?.content || "用户";
+    const elderId = document.querySelector('meta[name="elder-id"]')?.content || "";
+    const familyId = document.querySelector('meta[name="family-id"]')?.content || "";
+    
+    // 创建视频通话管理器
+    const rtcClient = new WebRTCClient(currentUserId, currentUserName);
+    
+    // 初始化WebRTC - 只在需要时连接
+    const roomName = `video_call_${elderId}`;
+    // rtcClient.connect(roomName); // 延迟连接，仅在需要时进行
+    
+    // Bootstrap模态框实例
+    const videoCallModalInstance = new bootstrap.Modal(videoCallModal);
+    
+    // 处理视频通话按钮点击事件
+    const videoCallBtns = document.querySelectorAll('.video-call');
+    if (videoCallBtns && videoCallBtns.length > 0) {
+        videoCallBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 获取家人ID
+                const familyUserElement = this.closest('.doctor-card');
+                const familyUserId = familyUserElement?.getAttribute('data-user-id');
+                const familyUserName = familyUserElement?.querySelector('.doctor-name')?.textContent;
+                
+                if (!familyUserId) {
+                    alert('找不到通话对象信息');
+                    return;
+                }
+                
+                // 连接WebSocket
+                rtcClient.connect(roomName);
+                
+                // 显示通话界面
+                videoCallModalInstance.show();
+                callStatusText.textContent = '正在呼叫...';
+                if (remoteUserName) remoteUserName.textContent = familyUserName || '家人';
+                
+                // 显示通话界面
+                videoCallContainer.style.display = 'block';
+                incomingCallContainer.style.display = 'none';
+                
+                // 发起通话
+                rtcClient.startCall(familyUserId, 'video');
+            });
+        });
+    }
+    
+    // 处理通话控制按钮
+    if (toggleMicBtn) {
+        toggleMicBtn.addEventListener('click', function() {
+            const enabled = rtcClient.toggleAudio();
+            this.classList.toggle('btn-danger', !enabled);
+            this.innerHTML = enabled ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
+        });
+    }
+    
+    if (toggleVideoBtn) {
+        toggleVideoBtn.addEventListener('click', function() {
+            const enabled = rtcClient.toggleVideo();
+            this.classList.toggle('btn-danger', !enabled);
+            this.innerHTML = enabled ? '<i class="fas fa-video"></i>' : '<i class="fas fa-video-slash"></i>';
+        });
+    }
+    
+    if (endCallBtn) {
+        endCallBtn.addEventListener('click', function() {
+            rtcClient.endCall();
+            videoCallModalInstance.hide();
+        });
+    }
+    
+    // 模态框关闭时结束通话
+    videoCallModal.addEventListener('hidden.bs.modal', function() {
+        rtcClient.endCall();
+    });
+    
+    // 接听/拒绝通话
+    if (acceptCallBtn) {
+        acceptCallBtn.addEventListener('click', function() {
+            // 显示通话界面
+            videoCallContainer.style.display = 'block';
+            incomingCallContainer.style.display = 'none';
+            
+            // 接受通话
+            rtcClient.acceptCall();
+        });
+    }
+    
+    if (rejectCallBtn) {
+        rejectCallBtn.addEventListener('click', function() {
+            // 拒绝通话
+            rtcClient.rejectCall();
+            
+            // 隐藏模态框
+            videoCallModalInstance.hide();
+        });
+    }
+    
+    // 事件监听回调
+    rtcClient.onCallRequest = function(senderId, senderName, callType) {
+        // 显示来电界面
+        videoCallContainer.style.display = 'none';
+        incomingCallContainer.style.display = 'block';
+        
+        // 设置来电信息
+        callerName.textContent = `来自: ${senderName}`;
+        
+        // 显示模态框
+        videoCallModalInstance.show();
+    };
+    
+    rtcClient.onCallEnded = function() {
+        // 隐藏模态框
+        videoCallModalInstance.hide();
+    };
+    
+    rtcClient.onError = function(message) {
+        // 显示错误信息
+        alert(message);
+    };
+}
+</script>
+
+<!-- 添加视频通话相关样式 -->
+<style>
+    .video-call-container {
+        width: 100%;
+    }
+    
+    .video-streams-container {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 60vh;
+        max-height: 500px;
+    }
+    
+    .remote-video-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #202124;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .local-video-container {
+        position: absolute;
+        width: 30%;
+        max-width: 200px;
+        height: auto;
+        bottom: 10px;
+        right: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    #localVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #444;
+    }
+    
+    .call-controls {
+        margin-top: 15px;
+    }
+    
+    .btn-control {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin: 0 5px;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .remote-user-info, .local-user-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 5px 10px;
+        background: rgba(0,0,0,0.5);
+        color: white;
+    }
+    
+    .local-user-info {
+        font-size: 12px;
+    }
+    
+    .animated-ring {
+        animation: ring 2s infinite;
+    }
+    
+    @keyframes ring {
+        0% { transform: rotate(0); }
+        5% { transform: rotate(15deg); }
+        10% { transform: rotate(-15deg); }
+        15% { transform: rotate(15deg); }
+        20% { transform: rotate(-15deg); }
+        25% { transform: rotate(0); }
+        100% { transform: rotate(0); }
+    }
+</style>
+<!-- 添加测试按钮 -->
+<button id="testModalBtn" onclick="showEmergencyModal()" style="position: fixed; top: 100px; right: 20px; z-index: 10000; background-color: green; color: white; padding: 10px; border: none; border-radius: 5px;">
+    测试模态框
+</button>
+{% endblock %}
+
+{% block modal_content %}
+{% include "emergency_modal.html" %}
+{% endblock %}

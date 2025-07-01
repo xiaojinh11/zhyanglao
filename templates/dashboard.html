@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}工作台 - 智慧养老平台{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 侧边栏 -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'dashboard' %}">
+                            <i class='bx bxs-dashboard'></i>
+                            工作台
+                        </a>
+                    </li>
+                    {% if user.userprofile.user_type == 'family' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class='bx bx-user'></i>
+                            老人信息
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class='bx bx-heart'></i>
+                            健康数据
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if user.userprofile.user_type == 'caregiver' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class='bx bx-list-ul'></i>
+                            护理任务
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class='bx bx-bell'></i>
+                            告警信息
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'ai_assistant' %}">
+                            <i class='bx bx-bot'></i>
+                            AI智能助手
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- 主要内容区域 -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">工作台</h1>
+            </div>
+
+            <!-- 数据卡片 -->
+            <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                {% if user.userprofile.user_type == 'family' %}
+                    {% if elder %}
+                    <div class="col">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">老人信息</h5>
+                                <p class="card-text">
+                                    姓名：{{ elder.name }}<br>
+                                    年龄：{{ elder.age }}岁<br>
+                                    联系电话：{{ elder.phone }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 border-success">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">设备状态</h5>
+                                <p class="card-text">
+                                    已连接设备：{{ devices.count }}台<br>
+                                    正常运行：{{ devices.filter(status=True).count }}台
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 border-warning">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning">最新告警</h5>
+                                <p class="card-text">
+                                    未处理告警：{{ recent_alerts.count }}条
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                {% if user.userprofile.user_type == 'caregiver' %}
+                <div class="col">
+                    <div class="card h-100 border-info">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">护理对象</h5>
+                            <p class="card-text">
+                                总人数：{{ elders.count }}人
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 border-warning">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">待处理事项</h5>
+                            <p class="card-text">
+                                未处理告警：{{ total_alerts }}条
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user.userprofile.user_type in 'doctor,admin' %}
+                <div class="col">
+                    <div class="card h-100 border-info">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">系统概况</h5>
+                            <p class="card-text">
+                                入住老人：{{ total_elders }}人<br>
+                                已连接设备：{{ total_devices }}台<br>
+                                未处理告警：{{ total_alerts }}条
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 最近告警列表 -->
+            {% if recent_alerts %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    最近告警
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>老人</th>
+                                    <th>类型</th>
+                                    <th>级别</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in recent_alerts %}
+                                <tr>
+                                    <td>{{ alert.timestamp|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ alert.elder.name }}</td>
+                                    <td>{{ alert.alert_type }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if alert.alert_level == 'critical' %}danger{% elif alert.alert_level == 'high' %}warning{% else %}info{% endif %}">
+                                            {{ alert.get_alert_level_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if alert.processed %}
+                                        <span class="badge bg-success">已处理</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">未处理</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 这里可以添加图表相关的JavaScript代码
+</script>
+{% endblock %}
