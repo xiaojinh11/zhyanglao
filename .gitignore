@@ -1,0 +1,76 @@
+ # ================
+# Django 特定忽略
+# ================
+# 数据库文件
+# 保留核心 Django 文件
+!manage.py
+!*/__init__.py
+!zhyanglao/  
+!zhyanglao_app/     
+
+
+
+# 静态文件收集目录
+/staticfiles/
+/media/
+
+# Python 缓存和编译文件
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+
+# ================
+# 环境相关文件
+# ================
+# 虚拟环境
+venv/
+.env/
+.envrc
+.env.sample
+.env.local
+
+# 敏感文件
+secrets.json
+credentials.py
+config.ini
+
+# ================
+# 系统文件
+# ================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================
+# 开发工具文件
+# ================
+# IDE 配置文件
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 测试覆盖报告
+.coverage
+htmlcov/
+
+# 日志文件
+*.log
+logs/
+
+# ================
+# 包管理文件
+# ================
+# pip 环境
+pip-selfcheck.json
+
+# 依赖目录
+vendor/
+
+# ================
+# 构建/发布文件
+# ================
+dist/
+build/
+*.egg
